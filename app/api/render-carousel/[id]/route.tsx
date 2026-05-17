@@ -5,7 +5,7 @@ import sharp from "sharp";
 import JSZip from "jszip";
 import { listSubmissions } from "@/lib/store";
 import { microlinkUrl, readCachedShot, writeCachedShot } from "@/lib/screenshot";
-import { brandedBackground, dominantHeroColor } from "@/lib/imageColor";
+import { brandBg, getSegment, type BgTreatment, type SegmentPalette } from "@/lib/brandTheme";
 
 export const runtime = "nodejs";
 
@@ -54,7 +54,6 @@ async function cropAtScroll(
   return bufferToDataUrl(buf);
 }
 
-type Bg = { base: string; accent: string };
 type SlideAssets = {
   logo: string;
   hero: string;
@@ -62,42 +61,114 @@ type SlideAssets = {
   bottom: string;
 };
 
-function bgStyle(bg: Bg) {
+function bgStyle(bg: BgTreatment) {
   return {
     width: W,
     height: H,
     display: "flex" as const,
     flexDirection: "column" as const,
     backgroundColor: bg.base,
-    backgroundImage: `radial-gradient(circle at 50% 60%, ${bg.accent} 0%, ${bg.base} 50%, #0a1326 100%)`,
+    backgroundImage: bg.cssOverlay ? `${bg.cssOverlay}, ${bg.cssGradient}` : bg.cssGradient,
     color: "#FFFFFF",
     fontFamily: "sans-serif",
     padding: "60px 60px",
   };
 }
 
-function Slide1Hero({ bg, headline, assets }: { bg: Bg; headline: string; assets: SlideAssets }) {
+function Slide1Hero({
+  bg,
+  seg,
+  headline,
+  assets,
+}: {
+  bg: BgTreatment;
+  seg: SegmentPalette;
+  headline: string;
+  assets: SlideAssets;
+}) {
   return (
     <div style={bgStyle(bg)}>
       <div style={{ display: "flex", flexDirection: "column" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={assets.logo} width={300} height={104} alt="" />
-        <div style={{ fontSize: 26, color: "#62FFE5", letterSpacing: 7, textTransform: "uppercase", marginTop: 30, fontWeight: 600 }}>
-          Built with AI
+        <div
+          style={{
+            fontSize: 26,
+            color: seg.accent,
+            letterSpacing: 7,
+            textTransform: "uppercase",
+            marginTop: 30,
+            fontWeight: 600,
+          }}
+        >
+          Built with AI · {seg.label}
         </div>
-        <div style={{ fontSize: 68, fontWeight: 800, lineHeight: 1.05, marginTop: 14, letterSpacing: -1 }}>
+        <div
+          style={{
+            fontSize: 68,
+            fontWeight: 800,
+            lineHeight: 1.05,
+            marginTop: 14,
+            letterSpacing: -1,
+          }}
+        >
           {headline}
         </div>
       </div>
-      <div style={{ display: "flex", flexGrow: 1, justifyContent: "center", alignItems: "center", marginTop: 24 }}>
-        <div style={{ display: "flex", width: 380, height: 820, backgroundColor: "#000", borderRadius: 64, padding: 10, boxShadow: "0 40px 100px rgba(0,0,0,0.55)" }}>
-          <div style={{ display: "flex", flex: 1, borderRadius: 54, overflow: "hidden", backgroundColor: "#FFFFFF", position: "relative" }}>
+      <div
+        style={{
+          display: "flex",
+          flexGrow: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          marginTop: 24,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            width: 380,
+            height: 820,
+            backgroundColor: "#000",
+            borderRadius: 64,
+            padding: 10,
+            boxShadow: "0 40px 100px rgba(0,0,0,0.55)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              flex: 1,
+              borderRadius: 54,
+              overflow: "hidden",
+              backgroundColor: "#FFFFFF",
+              position: "relative",
+            }}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={assets.hero} alt="" style={{ objectFit: "cover", width: "100%", height: "100%" }} />
+            <img
+              src={assets.hero}
+              alt=""
+              style={{
+                objectFit: "cover",
+                width: "100%",
+                height: "100%",
+              }}
+            />
           </div>
         </div>
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 20, color: "rgba(255,255,255,0.7)", letterSpacing: 5, textTransform: "uppercase", marginTop: 20 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          fontSize: 20,
+          color: "rgba(255,255,255,0.7)",
+          letterSpacing: 5,
+          textTransform: "uppercase",
+          marginTop: 20,
+        }}
+      >
         <div>coded.kw</div>
         <div>1 / 5 →</div>
       </div>
@@ -105,25 +176,79 @@ function Slide1Hero({ bg, headline, assets }: { bg: Bg; headline: string; assets
   );
 }
 
-function SlideName({ bg, projectName, pitch, assets, slideNum }: { bg: Bg; projectName: string; pitch: string; assets: SlideAssets; slideNum: number }) {
+function SlideName({
+  bg,
+  seg,
+  projectName,
+  pitch,
+  assets,
+  slideNum,
+}: {
+  bg: BgTreatment;
+  seg: SegmentPalette;
+  projectName: string;
+  pitch: string;
+  assets: SlideAssets;
+  slideNum: number;
+}) {
   return (
     <div style={bgStyle(bg)}>
       <div style={{ display: "flex" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={assets.logo} width={240} height={84} alt="" />
       </div>
-      <div style={{ display: "flex", flexDirection: "column", flexGrow: 1, justifyContent: "center" }}>
-        <div style={{ fontSize: 24, color: "#62FFE5", letterSpacing: 7, textTransform: "uppercase", fontWeight: 600, marginBottom: 20 }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          flexGrow: 1,
+          justifyContent: "center",
+        }}
+      >
+        <div
+          style={{
+            fontSize: 24,
+            color: seg.accent,
+            letterSpacing: 7,
+            textTransform: "uppercase",
+            fontWeight: 600,
+            marginBottom: 20,
+          }}
+        >
           Meet
         </div>
-        <div style={{ fontSize: 140, fontWeight: 800, lineHeight: 1, letterSpacing: -3 }}>
+        <div
+          style={{
+            fontSize: 140,
+            fontWeight: 800,
+            lineHeight: 1,
+            letterSpacing: -3,
+          }}
+        >
           {projectName}
         </div>
-        <div style={{ fontSize: 36, color: "rgba(255,255,255,0.85)", marginTop: 30, lineHeight: 1.3, fontWeight: 500 }}>
+        <div
+          style={{
+            fontSize: 36,
+            color: "rgba(255,255,255,0.85)",
+            marginTop: 30,
+            lineHeight: 1.3,
+            fontWeight: 500,
+          }}
+        >
           {pitch}
         </div>
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 20, color: "rgba(255,255,255,0.7)", letterSpacing: 5, textTransform: "uppercase" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          fontSize: 20,
+          color: "rgba(255,255,255,0.7)",
+          letterSpacing: 5,
+          textTransform: "uppercase",
+        }}
+      >
         <div>coded.kw</div>
         <div>{slideNum} / 5 →</div>
       </div>
@@ -131,28 +256,104 @@ function SlideName({ bg, projectName, pitch, assets, slideNum }: { bg: Bg; proje
   );
 }
 
-function SlidePhone({ bg, caption, screenshot, slideNum, assets }: { bg: Bg; caption: string; screenshot: string; slideNum: number; assets: SlideAssets }) {
+function SlidePhone({
+  bg,
+  seg,
+  caption,
+  screenshot,
+  slideNum,
+  assets,
+}: {
+  bg: BgTreatment;
+  seg: SegmentPalette;
+  caption: string;
+  screenshot: string;
+  slideNum: number;
+  assets: SlideAssets;
+}) {
   return (
     <div style={bgStyle(bg)}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={assets.logo} width={220} height={76} alt="" />
-        <div style={{ fontSize: 22, color: "#62FFE5", letterSpacing: 5, textTransform: "uppercase", fontWeight: 600 }}>
+        <div
+          style={{
+            fontSize: 22,
+            color: seg.accent,
+            letterSpacing: 5,
+            textTransform: "uppercase",
+            fontWeight: 600,
+          }}
+        >
           In Action
         </div>
       </div>
-      <div style={{ display: "flex", flexGrow: 1, alignItems: "center", gap: 50, marginTop: 30 }}>
-        <div style={{ display: "flex", width: 380, height: 820, backgroundColor: "#000", borderRadius: 64, padding: 10, boxShadow: "0 40px 100px rgba(0,0,0,0.55)", flexShrink: 0 }}>
-          <div style={{ display: "flex", flex: 1, borderRadius: 54, overflow: "hidden", backgroundColor: "#FFFFFF", position: "relative" }}>
+      <div
+        style={{
+          display: "flex",
+          flexGrow: 1,
+          alignItems: "center",
+          gap: 50,
+          marginTop: 30,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            width: 380,
+            height: 820,
+            backgroundColor: "#000",
+            borderRadius: 64,
+            padding: 10,
+            boxShadow: "0 40px 100px rgba(0,0,0,0.55)",
+            flexShrink: 0,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              flex: 1,
+              borderRadius: 54,
+              overflow: "hidden",
+              backgroundColor: "#FFFFFF",
+              position: "relative",
+            }}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={screenshot} alt="" style={{ objectFit: "cover", width: "100%", height: "100%" }} />
+            <img
+              src={screenshot}
+              alt=""
+              style={{
+                objectFit: "cover",
+                width: "100%",
+                height: "100%",
+              }}
+            />
           </div>
         </div>
-        <div style={{ display: "flex", fontSize: 32, color: "rgba(255,255,255,0.9)", lineHeight: 1.35, fontWeight: 500, flex: 1 }}>
+        <div
+          style={{
+            display: "flex",
+            fontSize: 32,
+            color: "rgba(255,255,255,0.9)",
+            lineHeight: 1.35,
+            fontWeight: 500,
+            flex: 1,
+          }}
+        >
           {caption}
         </div>
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 20, color: "rgba(255,255,255,0.7)", letterSpacing: 5, textTransform: "uppercase" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          fontSize: 20,
+          color: "rgba(255,255,255,0.7)",
+          letterSpacing: 5,
+          textTransform: "uppercase",
+        }}
+      >
         <div>coded.kw</div>
         <div>{slideNum} / 5 →</div>
       </div>
@@ -160,7 +361,19 @@ function SlidePhone({ bg, caption, screenshot, slideNum, assets }: { bg: Bg; cap
   );
 }
 
-function SlideCTA({ bg, projectName, projectUrl, assets }: { bg: Bg; projectName: string; projectUrl: string; assets: SlideAssets }) {
+function SlideCTA({
+  bg,
+  seg,
+  projectName,
+  projectUrl,
+  assets,
+}: {
+  bg: BgTreatment;
+  seg: SegmentPalette;
+  projectName: string;
+  projectUrl: string;
+  assets: SlideAssets;
+}) {
   const cleanUrl = projectUrl.replace(/^https?:\/\//, "").replace(/\/$/, "");
   return (
     <div style={bgStyle(bg)}>
@@ -168,21 +381,74 @@ function SlideCTA({ bg, projectName, projectUrl, assets }: { bg: Bg; projectName
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={assets.logo} width={240} height={84} alt="" />
       </div>
-      <div style={{ display: "flex", flexDirection: "column", flexGrow: 1, justifyContent: "center", alignItems: "center", textAlign: "center" }}>
-        <div style={{ fontSize: 28, color: "#62FFE5", letterSpacing: 8, textTransform: "uppercase", fontWeight: 600, marginBottom: 30 }}>
-          Try it now
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          flexGrow: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          textAlign: "center",
+        }}
+      >
+        <div
+          style={{
+            fontSize: 28,
+            color: seg.accent,
+            letterSpacing: 8,
+            textTransform: "uppercase",
+            fontWeight: 600,
+            marginBottom: 30,
+          }}
+        >
+          Try it now · {seg.label}
         </div>
-        <div style={{ fontSize: 100, fontWeight: 800, lineHeight: 1, letterSpacing: -2, marginBottom: 30 }}>
+        <div
+          style={{
+            fontSize: 100,
+            fontWeight: 800,
+            lineHeight: 1,
+            letterSpacing: -2,
+            marginBottom: 30,
+          }}
+        >
           {projectName} →
         </div>
-        <div style={{ display: "flex", padding: "20px 36px", border: "2px solid rgba(255,255,255,0.4)", borderRadius: 50, fontSize: 28, fontWeight: 600, letterSpacing: 1 }}>
+        <div
+          style={{
+            display: "flex",
+            padding: "20px 36px",
+            border: "2px solid rgba(255,255,255,0.4)",
+            borderRadius: 50,
+            fontSize: 28,
+            fontWeight: 600,
+            letterSpacing: 1,
+          }}
+        >
           {cleanUrl}
         </div>
-        <div style={{ fontSize: 24, color: "rgba(255,255,255,0.65)", marginTop: 50, maxWidth: 720, lineHeight: 1.4 }}>
-          Built by a CODED AI App Developer Bootcamp grad. Want to build like this? Link in bio.
+        <div
+          style={{
+            fontSize: 24,
+            color: "rgba(255,255,255,0.65)",
+            marginTop: 50,
+            maxWidth: 720,
+            lineHeight: 1.4,
+          }}
+        >
+          Built by a CODED {seg.label} grad. Want to build like this? Link in bio.
         </div>
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 20, color: "rgba(255,255,255,0.7)", letterSpacing: 5, textTransform: "uppercase" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          fontSize: 20,
+          color: "rgba(255,255,255,0.7)",
+          letterSpacing: 5,
+          textTransform: "uppercase",
+        }}
+      >
         <div>coded.kw</div>
         <div>5 / 5</div>
       </div>
@@ -200,19 +466,19 @@ export async function GET(
   if (!s) return new Response("Not found", { status: 404 });
 
   try {
+    const seg = getSegment(s.segment);
+    const bg = brandBg(seg);
+
     const [logoDataUrl, shotBuf] = await Promise.all([
       fileDataUrl("brand/coded-logo-white.png", "image/png"),
       getOrFetchShot(id, s.url),
     ]);
 
-    const [meta, sampledColor] = await Promise.all([
-      sharp(shotBuf).metadata(),
-      s.brandColor ? Promise.resolve(s.brandColor) : dominantHeroColor(shotBuf),
-    ]);
-    const bg = brandedBackground(sampledColor);
+    const meta = await sharp(shotBuf).metadata();
     const shotW = meta.width ?? 780;
     const shotH = meta.height ?? 1688;
 
+    // Three different scroll positions for the phone slides.
     const [heroShot, midShot, bottomShot] = await Promise.all([
       cropAtScroll(shotBuf, 0.0, shotW, shotH),
       cropAtScroll(shotBuf, 0.4, shotW, shotH),
@@ -226,18 +492,21 @@ export async function GET(
       bottom: bottomShot,
     };
 
+    // Split caption into a short pitch line for slide 2.
     const pitchLine = s.pitch.length > 120 ? s.pitch.slice(0, 117) + "…" : s.pitch;
+
+    // Pull a short evocative line from the caption for slide 3 / slide 4.
     const captionLines = s.caption.split("\n").filter((l) => l.trim().length > 0);
     const midCaption = captionLines[1] ?? captionLines[0] ?? "Built with AI. Shipped fast.";
     const bottomCaption =
       captionLines[2] ?? captionLines[captionLines.length - 1] ?? "Real product. Real users.";
 
     const slides = [
-      <Slide1Hero key="1" bg={bg} headline={s.headline} assets={assets} />,
-      <SlideName key="2" bg={bg} projectName={s.name} pitch={pitchLine} assets={assets} slideNum={2} />,
-      <SlidePhone key="3" bg={bg} caption={midCaption} screenshot={midShot} slideNum={3} assets={assets} />,
-      <SlidePhone key="4" bg={bg} caption={bottomCaption} screenshot={bottomShot} slideNum={4} assets={assets} />,
-      <SlideCTA key="5" bg={bg} projectName={s.name} projectUrl={s.url} assets={assets} />,
+      <Slide1Hero key="1" bg={bg} seg={seg} headline={s.headline} assets={assets} />,
+      <SlideName key="2" bg={bg} seg={seg} projectName={s.name} pitch={pitchLine} assets={assets} slideNum={2} />,
+      <SlidePhone key="3" bg={bg} seg={seg} caption={midCaption} screenshot={midShot} slideNum={3} assets={assets} />,
+      <SlidePhone key="4" bg={bg} seg={seg} caption={bottomCaption} screenshot={bottomShot} slideNum={4} assets={assets} />,
+      <SlideCTA key="5" bg={bg} seg={seg} projectName={s.name} projectUrl={s.url} assets={assets} />,
     ];
 
     const slideBuffers = await Promise.all(

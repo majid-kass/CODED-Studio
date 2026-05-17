@@ -2,14 +2,14 @@ import { bundle } from "@remotion/bundler";
 import { renderMedia, selectComposition } from "@remotion/renderer";
 import { promises as fs } from "fs";
 import path from "path";
-import sharp from "sharp";
 import { listSubmissions } from "@/lib/store";
 import {
   microlinkUrl,
   readCachedShot,
   writeCachedShot,
 } from "@/lib/screenshot";
-import { brandedBackground, dominantHeroColor } from "@/lib/imageColor";
+import sharp from "sharp";
+import { brandBg, getSegment } from "@/lib/brandTheme";
 
 export const runtime = "nodejs";
 export const maxDuration = 600;
@@ -62,32 +62,33 @@ export async function GET(
   if (!s) return new Response("Not found", { status: 404 });
 
   try {
+    const seg = getSegment(s.segment);
+    const bg = brandBg(seg);
+
     const [serveUrl, logoDataUrl, shotBuf] = await Promise.all([
       getBundle(),
       fileDataUrl("brand/coded-logo-white.png", "image/png"),
       getOrFetchShot(id, s.url),
     ]);
 
-    // Derive brand color + dimensions on the fly if missing from the submission.
-    const [meta, sampledColor] = await Promise.all([
-      sharp(shotBuf).metadata(),
-      s.brandColor ? Promise.resolve(s.brandColor) : dominantHeroColor(shotBuf),
-    ]);
+    const meta = await sharp(shotBuf).metadata();
     const shotWidth = s.shotWidth ?? meta.width ?? 780;
     const shotHeight = s.shotHeight ?? meta.height ?? 1688;
-    const bg = brandedBackground(sampledColor);
-
     const shotDataUrl = bufferToDataUrl(shotBuf);
 
     const inputProps = {
       headline: s.headline,
       projectName: s.name,
+      segmentLabel: seg.label,
       logoDataUrl,
       shotDataUrl,
       shotWidth,
       shotHeight,
       bgBase: bg.base,
       bgAccent: bg.accent,
+      bgGradient: bg.cssGradient,
+      bgOverlay: bg.cssOverlay ?? "",
+      segAccent: seg.accent,
     };
 
     const composition = await selectComposition({

@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { PhoneMockup } from "./PhoneMockup";
+import type { SegmentKey } from "@/lib/brandTheme";
+import { getSegment } from "@/lib/brandTheme";
 
 type Submission = {
   id: string;
@@ -11,6 +13,7 @@ type Submission = {
   headline: string;
   caption: string;
   hashtags: string[];
+  segment?: SegmentKey;
 };
 
 type Props = {
@@ -94,6 +97,7 @@ export function SubmissionCard({ submission, screenshotSrc }: Props) {
             screenshotUrl={screenshotSrc}
             headline={submission.headline}
             projectName={submission.name}
+            segment={submission.segment}
           />
         </div>
       </div>

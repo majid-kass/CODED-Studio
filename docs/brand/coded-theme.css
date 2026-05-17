@@ -1,0 +1,68 @@
+/* =========================================================
+   CODED Brand Theme — CSS variables
+   Source: Figma library (node 78-2641)
+   Last updated: 2026-04-28
+   ========================================================= */
+
+:root {
+  /* ---- CODED (Master) ---- */
+  --coded-navy:           #14243F; /* Primary — pro / printed backgrounds */
+  --coded-blue:           #004AA3; /* Secondary — youthful printings, decorative glow */
+  --coded-grey-soft:      #D2D2D2; /* Tertiary — light backgrounds */
+  --coded-black:          #1A1A1A; /* Typography — formal use only */
+  --coded-white:          #FFFFFF; /* Typography on dark / clean light designs */
+
+  /* ---- AI App Developer ---- */
+  --ai-light-sea-green:   #00B9B4; /* Primary */
+  --ai-stormy-teal:       #026678; /* Secondary backgrounds */
+  --ai-strong-cyan:       #16D7D1; /* Accent / glow */
+  --ai-aquamarine:        #62FFE5; /* Accent / glow */
+
+  /* ---- Unicode ---- */
+  --unicode-navy:         #14243F;
+  --unicode-orange:       #F46036;
+  --unicode-blue:         #0094CE;
+  --unicode-white:        #FFFFFF;
+
+  /* ---- CODED Juniors ---- */
+  --juniors-red:          #FF3E3E; /* Primary */
+  --juniors-white:        #FFFFFF; /* Backgrounds — slides, social light, certs */
+  --juniors-navy:         #14243F; /* Typography */
+  --juniors-winter-blue:  #0147BA; /* Winter camp + accent */
+  --juniors-blue-bright:  #0161D4;
+  --juniors-yellow:       #FFCC49;
+  --juniors-green:        #31CC66;
+  --juniors-orange:       #FF7300;
+  --juniors-pink:         #FF77B9;
+
+  /* ---- Data Science Bootcamp ---- */
+  --ds-purple:            #C466EF; /* Primary */
+  --ds-navy:              #14243F; /* Dark mode */
+  --ds-white:             #FFFFFF; /* Light mode */
+  --ds-grey-soft:         #D2D2D2; /* Light gradient pair */
+
+  /* ---- Kuwait Codes ---- */
+  --kw-deep-space:        #080827; /* Dominant background */
+  --kw-sky:               #00A0DF; /* Logo + secondary */
+  --kw-purple:            #7E31E0;
+  --kw-magenta:           #DF18C5;
+  --kw-cyan:              #2ED5F4;
+  --kw-orange:            #FAAC37;
+
+  /* ---- Academy-X ---- */
+  --ax-purple:            #7B28A2; /* Primary */
+  --ax-navy:              #14243F;
+  --ax-grey:              #E3E3E3;
+  --ax-coral:             #FF7269;
+  --ax-mint:              #14C3BB;
+
+  /* ---- Cybersecurity Bootcamp ---- */
+  --cyb-navy:             #14243F; /* Background top */
+  --cyb-midnight:         #00112F; /* Background bottom */
+  --cyb-deep-space:       #080827; /* Alt dark background */
+  --cyb-blue-team:        #2D4BFD; /* Blue team designs */
+  --cyb-red-team:         #F72961; /* Red team designs */
+
+  /* Background gradient utility */
+  --cyb-bg-gradient: linear-gradient(to bottom, var(--cyb-navy), var(--cyb-midnight));
+}

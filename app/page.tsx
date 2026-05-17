@@ -4,11 +4,17 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/client";
+import {
+  DEFAULT_SEGMENT,
+  SEGMENT_OPTIONS,
+  type SegmentKey,
+} from "@/lib/brandTheme";
 
 export default function SubmitPage() {
   const [url, setUrl] = useState("");
   const [name, setName] = useState("");
   const [pitch, setPitch] = useState("");
+  const [segment, setSegment] = useState<SegmentKey>(DEFAULT_SEGMENT);
   const [consent, setConsent] = useState(false);
   const [status, setStatus] = useState<"idle" | "submitting" | "done" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -31,7 +37,7 @@ export default function SubmitPage() {
       const res = await fetch("/api/submit", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ url, name, pitch, consent }),
+        body: JSON.stringify({ url, name, pitch, segment, consent }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error ?? "Failed");
@@ -95,6 +101,7 @@ export default function SubmitPage() {
                   setUrl("");
                   setName("");
                   setPitch("");
+                  setSegment(DEFAULT_SEGMENT);
                   setConsent(false);
                   setStatus("idle");
                 }}
@@ -134,6 +141,20 @@ export default function SubmitPage() {
                   onChange={(e) => setPitch(e.target.value)}
                   className="w-full rounded-lg bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-aiapp-cyan transition"
                 />
+              </Field>
+              <Field label="Which CODED program?">
+                <select
+                  required
+                  value={segment}
+                  onChange={(e) => setSegment(e.target.value as SegmentKey)}
+                  className="w-full rounded-lg bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-aiapp-cyan transition appearance-none cursor-pointer"
+                >
+                  {SEGMENT_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value} className="bg-coded-navy">
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
               </Field>
 
               <label className="flex items-start gap-3 text-sm text-white/70">
