@@ -1,5 +1,6 @@
 import { promises as fs } from "fs";
 import path from "path";
+import type { SegmentKey } from "./brandTheme";
 
 export type Submission = {
   id: string;
@@ -13,9 +14,8 @@ export type Submission = {
   caption: string;
   hashtags: string[];
   language?: "en" | "ar";
-  /** RGB triple of the dominant hero color for per-project background. */
-  brandColor?: { r: number; g: number; b: number };
-  /** Captured screenshot dimensions (full page). */
+  segment?: SegmentKey;
+  /** Captured screenshot dimensions, populated lazily by the first render. */
   shotWidth?: number;
   shotHeight?: number;
 };

@@ -1,14 +1,20 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import sharp from "sharp";
 import { addSubmission } from "@/lib/store";
 import { generateMarketingCopy } from "@/lib/marketingCopy";
-import { microlinkUrl, screenshotUrl, writeCachedShot } from "@/lib/screenshot";
-import { dominantHeroColor } from "@/lib/imageColor";
+import { screenshotUrl } from "@/lib/screenshot";
+import {
+  segments,
+  DEFAULT_SEGMENT,
+  type SegmentKey,
+} from "@/lib/brandTheme";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 30;
 
+// Submit only runs Claude (cheap, ~2-5s) and persists. Screenshot + renders are
+// gated behind admin action in the queue UI to avoid burning Microlink calls
+// and render compute on submissions the admin will reject.
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   if (!body || typeof body !== "object") {
@@ -28,29 +34,9 @@ export async function POST(req: Request) {
   }
 
   const id = randomUUID();
+  const copy = await generateMarketingCopy({ name, pitch });
 
-  // Run copy generation + screenshot capture in parallel — both are slow.
-  const [copy, shotBuf] = await Promise.all([
-    generateMarketingCopy({ name, pitch }),
-    fetch(microlinkUrl(url, { fullPage: true }), {
-      signal: AbortSignal.timeout(45_000),
-    })
-      .then(async (r) => {
-        if (!r.ok) throw new Error(`Screenshot fetch failed: ${r.status}`);
-        return Buffer.from(await r.arrayBuffer());
-      }),
-  ]).catch((e) => {
-    throw e;
-  });
-
-  // Persist screenshot + derive brand color + dimensions.
-  await writeCachedShot(id, shotBuf);
-  const [brandColor, meta] = await Promise.all([
-    dominantHeroColor(shotBuf),
-    sharp(shotBuf).metadata(),
-  ]);
-
-  const submission = {
+  await addSubmission({
     id,
     url,
     name,
@@ -63,12 +49,7 @@ export async function POST(req: Request) {
     hashtags: copy.hashtags,
     language: copy.language,
     segment,
-    brandColor,
-    shotWidth: meta.width,
-    shotHeight: meta.height,
-  };
-
-  await addSubmission(submission);
+  });
 
   return NextResponse.json({ ok: true, id, segment, language: copy.language });
 }

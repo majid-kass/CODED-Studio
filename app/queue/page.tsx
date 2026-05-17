@@ -3,7 +3,7 @@ import Link from "next/link";
 import { listSubmissions } from "@/lib/store";
 import { SubmissionCard } from "@/components/SubmissionCard";
 import { SignOutButton } from "@/components/SignOutButton";
-import { screenshotUrl } from "@/lib/screenshot";
+import { readCachedShot, screenshotUrl } from "@/lib/screenshot";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +14,15 @@ export default async function QueuePage() {
   const supabase = await supabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   const submissions = await listSubmissions();
+  // Decide which cards already have a screenshot cached so the UI knows whether
+  // to show a "pending" placeholder vs the phone-mockup preview. Generate
+  // action will trigger Microlink on demand for the rest.
+  const cards = await Promise.all(
+    submissions.map(async (s) => ({
+      submission: s,
+      hasScreenshot: (await readCachedShot(s.id)) !== null,
+    }))
+  );
 
   return (
     <main className="min-h-screen">
@@ -52,11 +61,12 @@ export default async function QueuePage() {
           <EmptyState />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 max-w-7xl mx-auto">
-            {submissions.map((s) => (
+            {cards.map(({ submission: s, hasScreenshot }) => (
               <SubmissionCard
                 key={s.id}
                 submission={s}
                 screenshotSrc={screenshotUrl(s.url, s.id)}
+                hasScreenshot={hasScreenshot}
               />
             ))}
           </div>
