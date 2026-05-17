@@ -1,0 +1,31 @@
+{
+  "name": "marketing-content",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.95.2",
+    "@remotion/bundler": "^4.0.460",
+    "@remotion/renderer": "^4.0.460",
+    "html-to-image": "^1.11.13",
+    "next": "^16.2.6",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "remotion": "^4.0.460",
+    "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.1",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5"
+  }
+}
