@@ -21,6 +21,7 @@ type Props = {
 export function SubmissionCard({ submission, screenshotSrc }: Props) {
   const [imgDownloading, setImgDownloading] = useState(false);
   const [vidDownloading, setVidDownloading] = useState(false);
+  const [carDownloading, setCarDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const date = new Date(submission.createdAt).toLocaleString("en-US", {
@@ -51,7 +52,11 @@ export function SubmissionCard({ submission, screenshotSrc }: Props) {
       const blob = await res.blob();
       const objectUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.download = `${safeName || "post"}-coded.${ext}`;
+      const filename =
+        ext === "zip"
+          ? `${safeName || "post"}-coded-carousel.zip`
+          : `${safeName || "post"}-coded.${ext}`;
+      link.download = filename;
       link.href = objectUrl;
       link.click();
       setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
@@ -106,21 +111,29 @@ export function SubmissionCard({ submission, screenshotSrc }: Props) {
           </p>
         </div>
 
-        <div className="flex gap-3 pt-2">
+        <div className="grid grid-cols-3 gap-3 pt-2">
           <button
             onClick={() => download(`/api/render/${submission.id}`, "png", setImgDownloading)}
-            disabled={imgDownloading || vidDownloading}
-            className="flex-1 rounded-lg bg-aiapp-primary hover:bg-aiapp-cyan disabled:opacity-50 transition text-coded-navy font-bold uppercase tracking-[0.2em] text-xs py-3"
+            disabled={imgDownloading || vidDownloading || carDownloading}
+            className="rounded-lg bg-aiapp-primary hover:bg-aiapp-cyan disabled:opacity-50 transition text-coded-navy font-bold uppercase tracking-[0.2em] text-[10px] py-3 leading-tight"
           >
-            {imgDownloading ? "Generating…" : "Download image"}
+            {imgDownloading ? "Generating…" : "Image"}
+          </button>
+          <button
+            onClick={() => download(`/api/render-carousel/${submission.id}`, "zip", setCarDownloading)}
+            disabled={imgDownloading || vidDownloading || carDownloading}
+            className="rounded-lg bg-aiapp-aqua/80 hover:bg-aiapp-aqua disabled:opacity-50 transition text-coded-navy font-bold uppercase tracking-[0.2em] text-[10px] py-3 leading-tight"
+            title="5-slide carousel as a zip of PNGs"
+          >
+            {carDownloading ? "Bundling…" : "Carousel"}
           </button>
           <button
             onClick={() => download(`/api/render-video/${submission.id}`, "mp4", setVidDownloading)}
-            disabled={imgDownloading || vidDownloading}
-            className="flex-1 rounded-lg bg-aiapp-cyan/80 hover:bg-aiapp-cyan disabled:opacity-50 transition text-coded-navy font-bold uppercase tracking-[0.2em] text-xs py-3"
+            disabled={imgDownloading || vidDownloading || carDownloading}
+            className="rounded-lg bg-aiapp-cyan/80 hover:bg-aiapp-cyan disabled:opacity-50 transition text-coded-navy font-bold uppercase tracking-[0.2em] text-[10px] py-3 leading-tight"
             title="~30s render"
           >
-            {vidDownloading ? "Rendering video…" : "Download video"}
+            {vidDownloading ? "Rendering…" : "Reel"}
           </button>
         </div>
         {error && (

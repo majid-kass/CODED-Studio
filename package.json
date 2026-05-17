@@ -14,6 +14,7 @@
     "@remotion/renderer": "^4.0.460",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.46.0",
+    "jszip": "^3.10.1",
     "next": "^16.2.6",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
