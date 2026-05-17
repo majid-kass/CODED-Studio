@@ -9,7 +9,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "CODED — Marketing Content",
+  title: "Showcase — CODED Studio",
   description: "Submit your project. Get a ready-to-post Instagram package.",
 };
 
