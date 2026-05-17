@@ -4,7 +4,7 @@ import path from "path";
 import sharp from "sharp";
 import { listSubmissions } from "@/lib/store";
 import { microlinkUrl, readCachedShot, writeCachedShot } from "@/lib/screenshot";
-import { brandedBackground, dominantHeroColor } from "@/lib/imageColor";
+import { brandBg, getSegment } from "@/lib/brandTheme";
 
 export const runtime = "nodejs";
 
@@ -38,16 +38,15 @@ export async function GET(
   const s = all.find((x) => x.id === id);
   if (!s) return new Response("Not found", { status: 404 });
 
+  const seg = getSegment(s.segment);
+  const bg = brandBg(seg);
+
   const [logoDataUrl, shotBuf] = await Promise.all([
     fileDataUrl("brand/coded-logo-white.png", "image/png"),
     getOrFetchShot(id, s.url),
   ]);
 
-  const [meta, sampledColor] = await Promise.all([
-    sharp(shotBuf).metadata(),
-    s.brandColor ? Promise.resolve(s.brandColor) : dominantHeroColor(shotBuf),
-  ]);
-  const bg = brandedBackground(sampledColor);
+  const meta = await sharp(shotBuf).metadata();
 
   // Crop the screenshot to a phone-aspect hero window (top of page).
   const w = meta.width ?? 780;
@@ -75,7 +74,9 @@ export async function GET(
           display: "flex",
           flexDirection: "column",
           backgroundColor: bg.base,
-          backgroundImage: `radial-gradient(circle at 50% 62%, ${bg.accent} 0%, ${bg.base} 50%, #0a1326 100%)`,
+          backgroundImage: bg.cssOverlay
+            ? `${bg.cssOverlay}, ${bg.cssGradient}`
+            : bg.cssGradient,
           color: "#FFFFFF",
           fontFamily: "sans-serif",
           padding: "70px 60px",
@@ -86,15 +87,15 @@ export async function GET(
           <img src={logoDataUrl} width={320} height={112} alt="" />
           <div
             style={{
-              fontSize: 30,
-              color: "#62FFE5",
+              fontSize: 28,
+              color: seg.accent,
               letterSpacing: 8,
               textTransform: "uppercase",
               marginTop: 36,
               fontWeight: 600,
             }}
           >
-            Built with AI
+            Built with AI · {seg.label}
           </div>
           <div
             style={{

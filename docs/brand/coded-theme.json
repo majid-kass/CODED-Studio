@@ -1,0 +1,364 @@
+{
+  "name": "CODED Brand Theme",
+  "version": "1.0.0",
+  "source": "Figma — https://www.figma.com/design/S3QD3C8a0gUACYRlWQ6VUY/library?node-id=78-2641",
+  "lastUpdated": "2026-04-28",
+  "typeface": "Neufile Grotesk",
+  "palettes": {
+    "coded": {
+      "label": "CODED",
+      "kind": "master",
+      "colors": [
+        {
+          "name": "Navy Blue",
+          "hex": "#14243F",
+          "rgb": "20, 36, 63",
+          "role": "primary",
+          "usage": "CODED primary color. Used for professional use, mainly generic backgrounds, especially printed materials."
+        },
+        {
+          "name": "Brand Blue",
+          "hex": "#004AA3",
+          "rgb": "0, 74, 163",
+          "role": "secondary",
+          "usage": "Secondary color for youthful printings (e.g. giveaways). Also used for decorative elements and gradient glow."
+        },
+        {
+          "name": "Soft Grey",
+          "hex": "#D2D2D2",
+          "rgb": "210, 210, 210",
+          "role": "tertiary",
+          "usage": "Tertiary color for light backgrounds. Adds a subtle gradient with white for light-mode designs."
+        },
+        {
+          "name": "Basic Black",
+          "hex": "#1A1A1A",
+          "rgb": "26, 26, 26",
+          "role": "neutral",
+          "usage": "Basic black for typography and some printings. Reserved for formal use only."
+        },
+        {
+          "name": "Basic White",
+          "hex": "#FFFFFF",
+          "rgb": "255, 255, 255",
+          "role": "neutral",
+          "usage": "Basic white for typography on dark backgrounds, and for clean / formal light designs."
+        }
+      ]
+    },
+    "ai-app-developer": {
+      "label": "AI App Developer",
+      "kind": "product",
+      "colors": [
+        {
+          "name": "Light Sea Green",
+          "hex": "#00B9B4",
+          "rgb": "0, 185, 180",
+          "role": "primary",
+          "usage": "Primary color for the main elements."
+        },
+        {
+          "name": "Stormy Teal",
+          "hex": "#026678",
+          "rgb": "2, 102, 120",
+          "role": "secondary",
+          "usage": "Secondary color for backgrounds."
+        },
+        {
+          "name": "Strong Cyan",
+          "hex": "#16D7D1",
+          "rgb": "22, 215, 209",
+          "role": "accent",
+          "usage": "Glow, decorative and detail color."
+        },
+        {
+          "name": "Aquamarine",
+          "hex": "#62FFE5",
+          "rgb": "98, 255, 229",
+          "role": "accent",
+          "usage": "Glow, decorative and detail color."
+        }
+      ]
+    },
+    "unicode": {
+      "label": "Unicode",
+      "kind": "product",
+      "colors": [
+        {
+          "name": "Navy Blue",
+          "hex": "#14243F",
+          "rgb": "20, 36, 63",
+          "role": "primary",
+          "usage": "Primary background / brand anchor (shared with CODED)."
+        },
+        {
+          "name": "Unicode Orange",
+          "hex": "#F46036",
+          "rgb": "244, 96, 54",
+          "role": "secondary",
+          "usage": "Signature accent color for Unicode."
+        },
+        {
+          "name": "Unicode Blue",
+          "hex": "#0094CE",
+          "rgb": "0, 148, 206",
+          "role": "tertiary",
+          "usage": "Supporting accent color."
+        },
+        {
+          "name": "White",
+          "hex": "#FFFFFF",
+          "rgb": "255, 255, 255",
+          "role": "neutral",
+          "usage": "Light surfaces, typography on dark backgrounds."
+        }
+      ]
+    },
+    "codedjuniors": {
+      "label": "CODED Juniors",
+      "kind": "product",
+      "colors": [
+        {
+          "name": "Juniors Red",
+          "hex": "#FF3E3E",
+          "rgb": "255, 62, 62",
+          "role": "primary",
+          "usage": "Primary color for the main elements and printing items."
+        },
+        {
+          "name": "White",
+          "hex": "#FFFFFF",
+          "rgb": "255, 255, 255",
+          "role": "background",
+          "usage": "Always used for bright backgrounds: 1) slides (white background only), 2) social-media light mode, 3) certificates."
+        },
+        {
+          "name": "Navy Blue",
+          "hex": "#14243F",
+          "rgb": "20, 36, 63",
+          "role": "typography",
+          "usage": "Color of typography on printings, plus digital and printing purposes."
+        },
+        {
+          "name": "Winter Camp Blue",
+          "hex": "#0147BA",
+          "rgb": "1, 71, 186",
+          "role": "accent",
+          "usage": "Glow, decorative & detail color. Winter-camp brand color."
+        },
+        {
+          "name": "Bright Blue",
+          "hex": "#0161D4",
+          "rgb": "1, 97, 212",
+          "role": "accent",
+          "usage": "Lighter blue accent variant."
+        },
+        {
+          "name": "Juniors Yellow",
+          "hex": "#FFCC49",
+          "rgb": "255, 204, 73",
+          "role": "accent",
+          "usage": "Glow, decorative & detail color."
+        },
+        {
+          "name": "Juniors Green",
+          "hex": "#31CC66",
+          "rgb": "49, 204, 102",
+          "role": "accent",
+          "usage": "Glow, decorative & detail color."
+        },
+        {
+          "name": "Juniors Orange",
+          "hex": "#FF7300",
+          "rgb": "255, 115, 0",
+          "role": "accent",
+          "usage": "Glow, decorative & detail color."
+        },
+        {
+          "name": "Juniors Pink",
+          "hex": "#FF77B9",
+          "rgb": "255, 119, 185",
+          "role": "accent",
+          "usage": "Glow, decorative & detail color."
+        }
+      ]
+    },
+    "data-science-bootcamp": {
+      "label": "Data Science Bootcamp",
+      "kind": "product",
+      "colors": [
+        {
+          "name": "Data Purple",
+          "hex": "#C466EF",
+          "rgb": "196, 102, 239",
+          "role": "primary",
+          "usage": "Primary color, used in main elements alongside white."
+        },
+        {
+          "name": "Navy Blue",
+          "hex": "#14243F",
+          "rgb": "20, 36, 63",
+          "role": "dark-mode",
+          "usage": "Dark-mode backgrounds."
+        },
+        {
+          "name": "White",
+          "hex": "#FFFFFF",
+          "rgb": "255, 255, 255",
+          "role": "light-mode",
+          "usage": "Light-mode design — slide backgrounds, digital and social media backgrounds."
+        },
+        {
+          "name": "Soft Grey",
+          "hex": "#D2D2D2",
+          "rgb": "210, 210, 210",
+          "role": "tertiary",
+          "usage": "Adds a subtle gradient with white for light-mode designs."
+        }
+      ]
+    },
+    "kuwait-codes": {
+      "label": "Kuwait Codes",
+      "kind": "product",
+      "colors": [
+        {
+          "name": "Deep Space",
+          "hex": "#080827",
+          "rgb": "8, 8, 39",
+          "role": "primary",
+          "usage": "Background — the dominant color in the designs."
+        },
+        {
+          "name": "Kuwait Sky",
+          "hex": "#00A0DF",
+          "rgb": "0, 160, 223",
+          "role": "secondary",
+          "usage": "Secondary and logo color, used in decorative elements."
+        },
+        {
+          "name": "Royal Purple",
+          "hex": "#7E31E0",
+          "rgb": "126, 49, 224",
+          "role": "accent",
+          "usage": "Decorative and small detail color."
+        },
+        {
+          "name": "Magenta",
+          "hex": "#DF18C5",
+          "rgb": "223, 24, 197",
+          "role": "accent",
+          "usage": "Decorative and small detail color."
+        },
+        {
+          "name": "Bright Cyan",
+          "hex": "#2ED5F4",
+          "rgb": "46, 213, 244",
+          "role": "accent",
+          "usage": "Decorative and small detail color."
+        },
+        {
+          "name": "Honey Orange",
+          "hex": "#FAAC37",
+          "rgb": "250, 172, 55",
+          "role": "accent",
+          "usage": "Decorative and small detail color."
+        }
+      ]
+    },
+    "academy-x": {
+      "label": "Academy-X",
+      "kind": "product",
+      "colors": [
+        {
+          "name": "Academy Purple",
+          "hex": "#7B28A2",
+          "rgb": "123, 40, 162",
+          "role": "primary",
+          "usage": "Primary brand color for Academy-X."
+        },
+        {
+          "name": "Navy Blue",
+          "hex": "#14243F",
+          "rgb": "20, 36, 63",
+          "role": "secondary",
+          "usage": "Dark backgrounds and typographic anchor."
+        },
+        {
+          "name": "Cool Grey",
+          "hex": "#E3E3E3",
+          "rgb": "227, 227, 227",
+          "role": "tertiary",
+          "usage": "Light surfaces and dividers."
+        },
+        {
+          "name": "Coral",
+          "hex": "#FF7269",
+          "rgb": "255, 114, 105",
+          "role": "accent",
+          "usage": "Warm decorative accent."
+        },
+        {
+          "name": "Mint Teal",
+          "hex": "#14C3BB",
+          "rgb": "20, 195, 187",
+          "role": "accent",
+          "usage": "Cool decorative accent."
+        }
+      ]
+    },
+    "cybersecurity-bootcamp": {
+      "label": "Cybersecurity Bootcamp",
+      "kind": "product",
+      "colors": [
+        {
+          "name": "Navy Blue",
+          "hex": "#14243F",
+          "rgb": "20, 36, 63",
+          "role": "primary",
+          "usage": "Main background color (top of gradient)."
+        },
+        {
+          "name": "Midnight",
+          "hex": "#00112F",
+          "rgb": "0, 17, 47",
+          "role": "primary-end",
+          "usage": "Bottom of the main background gradient with Navy Blue."
+        },
+        {
+          "name": "Deep Space",
+          "hex": "#080827",
+          "rgb": "8, 8, 39",
+          "role": "alt-background",
+          "usage": "Alternate dark background (shared with Kuwait Codes)."
+        },
+        {
+          "name": "Blue Team",
+          "hex": "#2D4BFD",
+          "rgb": "45, 75, 253",
+          "role": "secondary",
+          "usage": "Secondary color: 1) glow gradient, 2) Blue Team slides and social-media designs."
+        },
+        {
+          "name": "Red Team",
+          "hex": "#F72961",
+          "rgb": "247, 41, 97",
+          "role": "tertiary",
+          "usage": "Tertiary color: 1) glow gradient, 2) Red Team slides and social-media designs."
+        }
+      ],
+      "gradients": [
+        {
+          "name": "Cyber Background",
+          "stops": ["#14243F", "#00112F"],
+          "direction": "to bottom",
+          "usage": "Main page / slide background."
+        }
+      ]
+    }
+  },
+  "globalRoles": {
+    "navyBluePrimary": "#14243F",
+    "navyBlueIsBrandConstant": true,
+    "navyBlueAppearsIn": ["coded", "unicode", "codedjuniors", "data-science-bootcamp", "academy-x", "cybersecurity-bootcamp"]
+  }
+}

@@ -1,18 +1,34 @@
 import Image from "next/image";
+import { brandBg, getSegment, type SegmentKey } from "@/lib/brandTheme";
 
 type Props = {
   screenshotUrl: string;
   headline: string;
   projectName: string;
+  segment?: SegmentKey;
 };
 
-// 9:16 composition: what would become Frame 2 of the Reel.
-// Phone frame is CSS-drawn (rounded bezel + dynamic island) with the screenshot inside.
-// Layout uses fixed percentage heights so the phone never overflows the text region.
-export function PhoneMockup({ screenshotUrl, headline, projectName }: Props) {
+// 9:16 composition (queue preview). Mirrors the static PNG render — same layout,
+// same per-segment palette — so admins see what the actual download will look like.
+export function PhoneMockup({ screenshotUrl, headline, projectName, segment }: Props) {
+  const seg = getSegment(segment);
+  const bg = brandBg(seg);
+
   return (
-    <div className="relative w-full aspect-[9/16] overflow-hidden rounded-2xl bg-[#14243F] flex flex-col">
-      <div className="absolute inset-0 glow-teal opacity-90 pointer-events-none" />
+    <div
+      className="relative w-full aspect-[9/16] overflow-hidden rounded-2xl flex flex-col"
+      style={{ backgroundColor: bg.base }}
+    >
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ backgroundImage: bg.cssGradient, opacity: 0.95 }}
+      />
+      {bg.cssOverlay && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ backgroundImage: bg.cssOverlay }}
+        />
+      )}
 
       <div
         className="relative z-10 px-5 pt-5 flex flex-col gap-3"
@@ -27,8 +43,11 @@ export function PhoneMockup({ screenshotUrl, headline, projectName }: Props) {
           className="opacity-95"
         />
         <div>
-          <p className="text-[10px] tracking-[0.3em] uppercase text-aiapp-aqua mb-1.5">
-            Built with AI
+          <p
+            className="text-[10px] tracking-[0.3em] uppercase mb-1.5"
+            style={{ color: seg.accent }}
+          >
+            Built with AI · {seg.label}
           </p>
           <h2 className="text-white text-[22px] font-extrabold leading-[1.05] line-clamp-3">
             {headline}
@@ -41,9 +60,8 @@ export function PhoneMockup({ screenshotUrl, headline, projectName }: Props) {
         style={{ height: "58%" }}
       >
         <div className="relative h-full aspect-[9/19.5] py-4">
-          <div className="absolute -inset-8 blur-3xl glow-teal -z-10" />
-          <div className="relative h-full w-full rounded-[26px] bg-black p-[4px] shadow-[0_30px_60px_rgba(0,0,0,0.6)] ring-1 ring-white/10">
-            <div className="relative h-full w-full overflow-hidden rounded-[22px] bg-aiapp-bg/30">
+          <div className="absolute h-full w-full rounded-[26px] bg-black p-[4px] shadow-[0_30px_60px_rgba(0,0,0,0.6)] ring-1 ring-white/10">
+            <div className="relative h-full w-full overflow-hidden rounded-[22px] bg-white/5">
               <div className="absolute top-1 left-1/2 -translate-x-1/2 z-10 h-[10px] w-[46px] rounded-full bg-black" />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img

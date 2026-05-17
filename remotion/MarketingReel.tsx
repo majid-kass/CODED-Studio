@@ -14,13 +14,16 @@ export const REEL_DURATION_FRAMES = 900; // 30 seconds
 export const marketingReelSchema = z.object({
   headline: z.string(),
   projectName: z.string(),
+  segmentLabel: z.string(),
   logoDataUrl: z.string(),
   shotDataUrl: z.string(),
   shotWidth: z.number(),
   shotHeight: z.number(),
-  // Background gradient colors (RGB), already brand-mixed.
   bgBase: z.string(),
   bgAccent: z.string(),
+  bgGradient: z.string(),
+  bgOverlay: z.string(),
+  segAccent: z.string(),
 });
 
 const PHONE_W = 460;
@@ -63,12 +66,15 @@ export const MarketingReel: React.FC<
 > = ({
   headline,
   projectName,
+  segmentLabel,
   logoDataUrl,
   shotDataUrl,
   shotWidth,
   shotHeight,
   bgBase,
-  bgAccent,
+  bgGradient,
+  bgOverlay,
+  segAccent,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -139,21 +145,22 @@ export const MarketingReel: React.FC<
         color: "#FFFFFF",
       }}
     >
-      {/* Background gradient using project's dominant color */}
+      {/* Segment-branded gradient background */}
       <AbsoluteFill
         style={{
-          backgroundImage: `radial-gradient(circle at 50% 62%, ${bgAccent} 0%, ${bgBase} 50%, #0a1326 100%)`,
+          backgroundImage: bgGradient,
           opacity: glowPulse,
         }}
       />
-      {/* Subtle teal brand glow overlay */}
-      <AbsoluteFill
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 50% 65%, rgba(98,255,229,0.18) 0%, rgba(20,36,63,0) 50%)",
-          opacity: glowPulse,
-        }}
-      />
+      {/* Optional second-layer brand overlay (per-segment) */}
+      {bgOverlay && (
+        <AbsoluteFill
+          style={{
+            backgroundImage: bgOverlay,
+            opacity: glowPulse,
+          }}
+        />
+      )}
 
       {/* Foreground content stack */}
       <AbsoluteFill style={{ padding: "70px 60px", display: "flex" }}>
@@ -172,7 +179,7 @@ export const MarketingReel: React.FC<
           style={{
             marginTop: 40,
             fontSize: 30,
-            color: "#62FFE5",
+            color: segAccent,
             letterSpacing: 8,
             textTransform: "uppercase",
             fontWeight: 600,
@@ -180,7 +187,7 @@ export const MarketingReel: React.FC<
             transform: `translateY(${eyebrowY}px)`,
           }}
         >
-          Built with AI
+          Built with AI · {segmentLabel}
         </div>
 
         {/* Headline */}

@@ -18,6 +18,9 @@ export async function POST(req: Request) {
   const url = String(body.url ?? "").trim();
   const name = String(body.name ?? "").trim();
   const pitch = String(body.pitch ?? "").trim();
+  const segmentRaw = String(body.segment ?? "").trim();
+  const segment: SegmentKey =
+    segmentRaw in segments ? (segmentRaw as SegmentKey) : DEFAULT_SEGMENT;
   const consent = Boolean(body.consent);
 
   if (!url || !name || !pitch || !consent) {
@@ -59,6 +62,7 @@ export async function POST(req: Request) {
     caption: copy.caption,
     hashtags: copy.hashtags,
     language: copy.language,
+    segment,
     brandColor,
     shotWidth: meta.width,
     shotHeight: meta.height,
@@ -66,5 +70,5 @@ export async function POST(req: Request) {
 
   await addSubmission(submission);
 
-  return NextResponse.json({ ok: true, id, language: copy.language });
+  return NextResponse.json({ ok: true, id, segment, language: copy.language });
 }
