@@ -2,11 +2,17 @@ import Image from "next/image";
 import Link from "next/link";
 import { listSubmissions } from "@/lib/store";
 import { SubmissionCard } from "@/components/SubmissionCard";
+import { SignOutButton } from "@/components/SignOutButton";
 import { screenshotUrl } from "@/lib/screenshot";
+import { supabaseServer } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function QueuePage() {
+  // Middleware already redirects unauthenticated users — this read is just so we
+  // can greet the admin by email in the header.
+  const supabase = await supabaseServer();
+  const { data: { user } } = await supabase.auth.getUser();
   const submissions = await listSubmissions();
 
   return (
@@ -25,12 +31,20 @@ export default async function QueuePage() {
             Marketing queue
           </span>
         </Link>
-        <Link
-          href="/"
-          className="text-[10px] uppercase tracking-[0.25em] text-white/60 hover:text-aiapp-aqua transition whitespace-nowrap"
-        >
-          ← Submit form
-        </Link>
+        <div className="flex items-center gap-4">
+          {user?.email && (
+            <span className="hidden sm:inline text-[10px] uppercase tracking-[0.25em] text-white/50 truncate max-w-[200px]">
+              {user.email}
+            </span>
+          )}
+          <Link
+            href="/"
+            className="text-[10px] uppercase tracking-[0.25em] text-white/60 hover:text-aiapp-aqua transition whitespace-nowrap"
+          >
+            ← Submit form
+          </Link>
+          <SignOutButton />
+        </div>
       </header>
 
       <section className="px-6 sm:px-8 py-12">

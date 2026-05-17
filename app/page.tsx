@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { supabaseBrowser } from "@/lib/supabase/client";
 
 export default function SubmitPage() {
   const [url, setUrl] = useState("");
@@ -11,6 +12,16 @@ export default function SubmitPage() {
   const [consent, setConsent] = useState(false);
   const [status, setStatus] = useState<"idle" | "submitting" | "done" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [signedIn, setSignedIn] = useState(false);
+
+  useEffect(() => {
+    const supabase = supabaseBrowser();
+    supabase.auth.getUser().then(({ data }) => setSignedIn(!!data.user));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setSignedIn(!!session?.user);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -42,12 +53,23 @@ export default function SubmitPage() {
           style={{ height: "auto" }}
           priority
         />
-        <Link
-          href="/queue"
-          className="text-[10px] uppercase tracking-[0.25em] text-white/60 hover:text-aiapp-aqua transition whitespace-nowrap"
-        >
-          Admin →
-        </Link>
+        <div className="flex items-center gap-4">
+          {signedIn ? (
+            <Link
+              href="/queue"
+              className="text-[10px] uppercase tracking-[0.25em] text-white/60 hover:text-aiapp-aqua transition whitespace-nowrap"
+            >
+              Dashboard →
+            </Link>
+          ) : (
+            <Link
+              href="/sign-in"
+              className="text-[10px] uppercase tracking-[0.25em] text-white/60 hover:text-aiapp-aqua transition whitespace-nowrap"
+            >
+              Admin sign in
+            </Link>
+          )}
+        </div>
       </header>
 
       <section className="flex-1 flex items-center justify-center px-6 py-12">
