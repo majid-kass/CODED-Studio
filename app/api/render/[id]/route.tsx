@@ -95,7 +95,7 @@ export async function GET(
               fontWeight: 600,
             }}
           >
-            Built with AI · {seg.label}
+            {`Built with AI · ${seg.label}`}
           </div>
           <div
             style={{

@@ -101,7 +101,7 @@ function Slide1Hero({
             fontWeight: 600,
           }}
         >
-          Built with AI · {seg.label}
+          {`Built with AI · ${seg.label}`}
         </div>
         <div
           style={{
@@ -250,7 +250,7 @@ function SlideName({
         }}
       >
         <div>coded.kw</div>
-        <div>{slideNum} / 5 →</div>
+        <div>{`${slideNum} / 5 →`}</div>
       </div>
     </div>
   );
@@ -355,7 +355,7 @@ function SlidePhone({
         }}
       >
         <div>coded.kw</div>
-        <div>{slideNum} / 5 →</div>
+        <div>{`${slideNum} / 5 →`}</div>
       </div>
     </div>
   );
@@ -401,7 +401,7 @@ function SlideCTA({
             marginBottom: 30,
           }}
         >
-          Try it now · {seg.label}
+          {`Try it now · ${seg.label}`}
         </div>
         <div
           style={{
@@ -412,7 +412,7 @@ function SlideCTA({
             marginBottom: 30,
           }}
         >
-          {projectName} →
+          {`${projectName} →`}
         </div>
         <div
           style={{
@@ -436,7 +436,7 @@ function SlideCTA({
             lineHeight: 1.4,
           }}
         >
-          Built by a CODED {seg.label} grad. Want to build like this? Link in bio.
+          {`Built by a CODED ${seg.label} grad. Want to build like this? Link in bio.`}
         </div>
       </div>
       <div
