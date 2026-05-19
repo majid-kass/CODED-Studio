@@ -95,7 +95,12 @@ export function SubmissionCard({ submission, screenshotSrc, hasScreenshot }: Pro
       setWarming(true);
       try {
         const res = await fetch(`/api/screenshot?id=${submission.id}`);
-        if (!res.ok) throw new Error(`Screenshot capture failed (${res.status})`);
+        if (!res.ok) {
+          const detail = (await res.text().catch(() => "")).slice(0, 200);
+          throw new Error(
+            `Screenshot capture failed (${res.status})${detail ? ` — ${detail}` : ""}`
+          );
+        }
         setScreenshotReady(true);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Screenshot capture failed");

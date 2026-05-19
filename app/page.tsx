@@ -49,25 +49,10 @@ export default function SubmitPage() {
 
   return (
     <main className="min-h-screen flex flex-col relative overflow-hidden">
-      {/* Ambient brand glow — subtle radial that hints at depth without distracting */}
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(60% 50% at 50% 0%, rgba(0,74,163,0.35) 0%, rgba(20,36,63,0) 60%)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(40% 40% at 100% 100%, rgba(98,255,229,0.10) 0%, rgba(20,36,63,0) 60%)",
-        }}
-      />
+      <BrandBackdrop />
+      <FloatingDecorations />
 
-      <header className="relative z-10 px-6 sm:px-10 py-6 flex items-center justify-between">
+      <header className="relative z-20 px-6 sm:px-10 py-6 flex items-center justify-between">
         <CodedLogo width={110} />
         {signedIn ? (
           <Link
@@ -86,8 +71,7 @@ export default function SubmitPage() {
         )}
       </header>
 
-      <section className="relative z-10 flex-1 flex flex-col items-center px-6 pb-16">
-        {/* Hero wordmark — the brand statement */}
+      <section className="relative z-20 flex-1 flex flex-col items-center px-6 pb-16">
         <div className="w-full max-w-5xl mt-10 sm:mt-16 mb-12 sm:mb-16 text-center">
           <p className="text-[10px] sm:text-xs uppercase tracking-[0.5em] text-white/50 mb-5">
             CODED · Capstone Showcase
@@ -97,15 +81,8 @@ export default function SubmitPage() {
             <br />
             <span className="text-white/85">Showcase</span>
           </h1>
-          <p className="mt-8 sm:mt-10 max-w-2xl mx-auto text-lg sm:text-xl text-white/70 leading-relaxed">
-            Drop your project URL. We turn it into a ready-to-post Instagram package —
-            single image, 5-slide carousel, and a 30-second reel — no manual design,
-            no copywriting.
-          </p>
-          <FeatureRow />
         </div>
 
-        {/* Submission form */}
         <div className="w-full max-w-xl">
           {status === "done" ? (
             <div className="rounded-2xl border border-white/15 bg-white/[0.04] p-8 backdrop-blur-sm">
@@ -213,7 +190,7 @@ export default function SubmitPage() {
         </div>
       </section>
 
-      <footer className="relative z-10 px-6 sm:px-10 py-6 flex items-center justify-between text-[10px] uppercase tracking-[0.3em] text-white/40">
+      <footer className="relative z-20 px-6 sm:px-10 py-6 flex items-center justify-between text-[10px] uppercase tracking-[0.3em] text-white/40">
         <span>coded.kw</span>
         <span>@coded.kw</span>
       </footer>
@@ -232,24 +209,94 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function FeatureRow() {
-  const items = [
-    { glyph: "✦", label: "AI copy · EN + AR" },
-    { glyph: "★", label: "1080×1920 image" },
-    { glyph: "◆", label: "5-slide carousel" },
-    { glyph: "⚡", label: "30-second reel" },
+// Layered ambient gradients — give the navy field a sense of depth without
+// distracting from the form. Two radials: brand-blue glow up top, soft
+// aquamarine in the lower-right corner.
+function BrandBackdrop() {
+  return (
+    <>
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none z-0"
+        style={{
+          background:
+            "radial-gradient(60% 50% at 50% 0%, rgba(0,74,163,0.35) 0%, rgba(20,36,63,0) 60%)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none z-0"
+        style={{
+          background:
+            "radial-gradient(40% 40% at 100% 100%, rgba(98,255,229,0.10) 0%, rgba(20,36,63,0) 60%)",
+        }}
+      />
+    </>
+  );
+}
+
+// Floating decorative marks scattered around the canvas. Visual language is
+// the CODED [bracket] motif plus code-styled glyphs, with subtle drift
+// animations so the page feels alive without distracting from the form.
+function FloatingDecorations() {
+  const marks: {
+    glyph: string;
+    top: string;
+    left?: string;
+    right?: string;
+    size: number;
+    rotate: number;
+    color: string;
+    opacity: number;
+    delay: number;
+    duration: number;
+  }[] = [
+    { glyph: "[ ]",  top: "14%", left: "6%",   size: 56,  rotate: -8,  color: "#FFFFFF", opacity: 0.10, delay: 0,   duration: 9 },
+    { glyph: "✦",    top: "22%", right: "8%",  size: 38,  rotate: 12,  color: "#62FFE5", opacity: 0.55, delay: 1,   duration: 7 },
+    { glyph: "</>",  top: "34%", left: "10%",  size: 30,  rotate: 0,   color: "#FFFFFF", opacity: 0.25, delay: 2.5, duration: 8 },
+    { glyph: "[ ]",  top: "60%", right: "4%",  size: 96,  rotate: 10,  color: "#FFFFFF", opacity: 0.06, delay: 1.5, duration: 12 },
+    { glyph: "{ }",  top: "70%", left: "3%",   size: 44,  rotate: -6,  color: "#FFFFFF", opacity: 0.18, delay: 0.5, duration: 10 },
+    { glyph: "✦",    top: "82%", right: "12%", size: 26,  rotate: 0,   color: "#62FFE5", opacity: 0.6,  delay: 3,   duration: 6 },
+    { glyph: "★",    top: "8%",  right: "30%", size: 22,  rotate: 0,   color: "#FFFFFF", opacity: 0.35, delay: 4,   duration: 5 },
+    { glyph: "•",    top: "50%", right: "16%", size: 18,  rotate: 0,   color: "#62FFE5", opacity: 0.8,  delay: 2,   duration: 4 },
+    { glyph: "•",    top: "44%", left: "18%",  size: 14,  rotate: 0,   color: "#FFFFFF", opacity: 0.5,  delay: 0,   duration: 4 },
+    { glyph: "→",    top: "92%", left: "44%",  size: 30,  rotate: 0,   color: "#FFFFFF", opacity: 0.25, delay: 2,   duration: 9 },
   ];
   return (
-    <ul className="mt-10 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-      {items.map((it) => (
-        <li
-          key={it.label}
-          className="flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-[11px] sm:text-xs uppercase tracking-[0.18em] text-white/80"
+    <div aria-hidden className="absolute inset-0 pointer-events-none z-10 overflow-hidden">
+      <style>{`
+        @keyframes drift {
+          0%, 100% { transform: translateY(0px) rotate(var(--rot,0deg)); }
+          50%      { transform: translateY(-14px) rotate(calc(var(--rot,0deg) + 2deg)); }
+        }
+      `}</style>
+      {marks.map((m, i) => (
+        <span
+          key={i}
+          style={{
+            position: "absolute",
+            top: m.top,
+            left: m.left,
+            right: m.right,
+            fontSize: m.size,
+            color: m.color,
+            opacity: m.opacity,
+            fontWeight: 800,
+            fontFamily: "DM Sans, Helvetica, Arial, sans-serif",
+            letterSpacing: "0.05em",
+            textShadow: m.color === "#62FFE5"
+              ? `0 0 ${m.size * 0.5}px rgba(98,255,229,0.45)`
+              : undefined,
+            // CSS var for the drift keyframes
+            ["--rot" as string]: `${m.rotate}deg`,
+            transform: `rotate(${m.rotate}deg)`,
+            animation: `drift ${m.duration}s ease-in-out ${m.delay}s infinite`,
+            willChange: "transform",
+          } as React.CSSProperties}
         >
-          <span className="text-white">{it.glyph}</span>
-          {it.label}
-        </li>
+          {m.glyph}
+        </span>
       ))}
-    </ul>
+    </div>
   );
 }
