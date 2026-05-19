@@ -20,7 +20,9 @@ export const Root = () => {
         defaultProps={{
           headline: "A Booking Platform For A Rooftop",
           projectName: "Loft 5",
+          segmentKey: "ai-app-developer",
           segmentLabel: "AI App Developer",
+          aiLockup: "",
           shotDataUrl: "",
           shotWidth: 780,
           shotHeight: 1688,

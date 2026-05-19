@@ -62,6 +62,11 @@ async function getBundle() {
   return bundleCache;
 }
 
+async function fileDataUrl(rel: string, mime: string) {
+  const buf = await fs.readFile(path.join(process.cwd(), "public", rel));
+  return `data:${mime};base64,${buf.toString("base64")}`;
+}
+
 function bufferToDataUrl(buf: Buffer, mime = "image/png") {
   return `data:${mime};base64,${buf.toString("base64")}`;
 }
@@ -91,9 +96,12 @@ export async function GET(
     const seg = getSegment(s.segment);
     const bg = brandBg(seg);
 
-    const [serveUrl, shotBuf] = await Promise.all([
+    const [serveUrl, shotBuf, aiLockup] = await Promise.all([
       getBundle(),
       getOrFetchShot(id, s.url),
+      seg.key === "ai-app-developer"
+        ? fileDataUrl("brand/ai-app-developer-white.png", "image/png")
+        : Promise.resolve(""),
     ]);
 
     const meta = await sharp(shotBuf).metadata();
@@ -104,7 +112,9 @@ export async function GET(
     const inputProps = {
       headline: s.headline,
       projectName: s.name,
+      segmentKey: seg.key,
       segmentLabel: seg.label,
+      aiLockup,
       shotDataUrl,
       shotWidth,
       shotHeight,

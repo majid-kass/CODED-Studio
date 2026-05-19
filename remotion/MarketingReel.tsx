@@ -7,7 +7,8 @@ import {
   useVideoConfig,
 } from "remotion";
 import { z } from "zod";
-import { CodedLogo } from "../components/CodedLogo";
+import { SegmentLogo } from "../components/SegmentLogo";
+import type { SegmentKey } from "../lib/brandTheme";
 
 export const REEL_FPS = 30;
 export const REEL_DURATION_FRAMES = 900; // 30s
@@ -15,7 +16,9 @@ export const REEL_DURATION_FRAMES = 900; // 30s
 export const marketingReelSchema = z.object({
   headline: z.string(),
   projectName: z.string(),
+  segmentKey: z.string(),
   segmentLabel: z.string(),
+  aiLockup: z.string(),
   shotDataUrl: z.string(),
   shotWidth: z.number(),
   shotHeight: z.number(),
@@ -375,7 +378,9 @@ export const MarketingReel: React.FC<
 > = ({
   headline,
   projectName,
+  segmentKey,
   segmentLabel,
+  aiLockup,
   shotDataUrl,
   shotWidth,
   shotHeight,
@@ -533,7 +538,11 @@ export const MarketingReel: React.FC<
             display: "flex",
           }}
         >
-          <CodedLogo width={320} />
+          <SegmentLogo
+            width={340}
+            segment={segmentKey as SegmentKey}
+            aiAppDeveloperDataUrl={aiLockup || undefined}
+          />
         </div>
         <div
           style={{
