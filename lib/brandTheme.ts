@@ -139,26 +139,57 @@ export function getSegment(key?: string | null): SegmentPalette {
   return segments[DEFAULT_SEGMENT];
 }
 
-// Background "treatment" — base, accent glow center, and a CSS gradient string
-// that renderers can drop in directly. Cybersecurity uses its canonical vertical
-// gradient; everything else uses a radial spotlight on the segment's primary.
+// Background "treatment" — base, accent glow center, gradient + overlay strings
+// renderers can drop in directly, and a theme dial that drives text + frame
+// colors so each program's canonical mode (Juniors = white slides, Cyber =
+// navy→midnight gradient, etc.) actually renders the way the brand book
+// prescribes.
 export type BgTreatment = {
   base: string;       // solid fallback / outermost background
   accent: string;     // glow center / hero accent
   cssGradient: string;
   cssOverlay?: string; // optional secondary overlay gradient
+  /** "light" → navy type on white; "dark" → white type on navy/deep bg. */
+  theme: "light" | "dark";
+  text: string;       // canonical body text color for this theme
+  textDim: string;    // dimmed body text (for footers, labels)
+  /** Corner-bracket / hairline divider color appropriate to the theme. */
+  rule: string;
 };
 
 export function brandBg(seg: SegmentPalette): BgTreatment {
+  // Juniors per the brand book: bright social posts use WHITE backgrounds with
+  // navy typography and red/yellow accents — NOT the dark gradient that all
+  // the bootcamp programs share.
+  if (seg.key === "codedjuniors") {
+    return {
+      base: "#FFFFFF",
+      accent: seg.primary, // Juniors Red
+      cssGradient: `radial-gradient(circle at 50% 55%, ${hexA(seg.primary, 0.10)} 0%, #FFFFFF 60%)`,
+      cssOverlay: `radial-gradient(circle at 80% 80%, ${hexA(seg.accent, 0.12)} 0%, transparent 50%)`,
+      theme: "light",
+      text: "#14243F",
+      textDim: "rgba(20,36,63,0.55)",
+      rule: "#14243F",
+    };
+  }
+
+  // Cybersecurity: canonical vertical gradient navy → midnight, never radial.
   if (seg.key === "cybersecurity-bootcamp") {
     return {
       base: seg.bg,
       accent: seg.primary,
       cssGradient: `linear-gradient(to bottom, ${seg.bg}, ${seg.bgEnd})`,
       cssOverlay: `radial-gradient(circle at 50% 55%, ${hexA(seg.primary, 0.22)} 0%, transparent 55%)`,
+      theme: "dark",
+      text: "#FFFFFF",
+      textDim: "rgba(255,255,255,0.72)",
+      rule: "#FFFFFF",
     };
   }
-  // Default radial spotlight on the primary, fading to the dark anchor.
+
+  // Default for the other programs: radial spotlight on the primary against a
+  // segment-bg + dark-anchor base. Dark theme — white type.
   return {
     base: seg.bg,
     accent: seg.primary,
@@ -166,6 +197,10 @@ export function brandBg(seg: SegmentPalette): BgTreatment {
     cssOverlay: seg.accentBright
       ? `radial-gradient(circle at 50% 65%, ${hexA(seg.accentBright, 0.18)} 0%, transparent 50%)`
       : undefined,
+    theme: "dark",
+    text: "#FFFFFF",
+    textDim: "rgba(255,255,255,0.75)",
+    rule: "#FFFFFF",
   };
 }
 

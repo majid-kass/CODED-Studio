@@ -77,7 +77,7 @@ export default function SubmitPage() {
             CODED · Capstone Showcase
           </p>
           <h1 className="font-extrabold uppercase leading-[0.92] tracking-[-0.02em] text-[clamp(64px,13vw,180px)]">
-            CODED
+            Project
             <br />
             <span className="text-white/85">Showcase</span>
           </h1>

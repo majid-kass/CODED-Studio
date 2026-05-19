@@ -123,6 +123,9 @@ export async function GET(
       bgGradient: bg.cssGradient,
       bgOverlay: bg.cssOverlay ?? "",
       segAccent: seg.accent,
+      theme: bg.theme,
+      textColor: bg.text,
+      textDimColor: bg.textDim,
     };
 
     const composition = await selectComposition({

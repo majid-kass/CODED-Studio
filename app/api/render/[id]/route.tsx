@@ -85,18 +85,16 @@ export async function GET(
           backgroundImage: bg.cssOverlay
             ? `${bg.cssOverlay}, ${bg.cssGradient}`
             : bg.cssGradient,
-          color: "#FFFFFF",
+          color: bg.text,
           fontFamily: "sans-serif",
           padding: "80px 80px",
           position: "relative",
           overflow: "hidden",
         }}
       >
-        {/* Corner brackets — framing motif */}
-        <CornerBracket x="left" y="top" color="#FFFFFF" opacity={0.18} />
+        <CornerBracket x="left" y="top" color={bg.rule} opacity={0.18} />
         <CornerBracket x="right" y="bottom" color={seg.accent} opacity={0.55} />
 
-        {/* Header row */}
         <div
           style={{
             display: "flex",
@@ -105,13 +103,18 @@ export async function GET(
             width: "100%",
           }}
         >
-          <SegmentLogo width={340} segment={seg.key} aiAppDeveloperDataUrl={aiLockup} />
+          <SegmentLogo
+            width={340}
+            segment={seg.key}
+            aiAppDeveloperDataUrl={aiLockup}
+            color={bg.text}
+          />
           <div
             style={{
               display: "flex",
               fontSize: 24,
               letterSpacing: 8,
-              color: "rgba(255,255,255,0.85)",
+              color: bg.textDim,
               textTransform: "uppercase",
               fontWeight: 700,
             }}
@@ -139,10 +142,10 @@ export async function GET(
           <span style={{ display: "flex" }}>]</span>
         </div>
 
-        {/* Headline */}
         <div
           style={{
             display: "flex",
+            color: bg.text,
             fontSize: 92,
             fontWeight: 900,
             lineHeight: 1.0,
@@ -229,13 +232,12 @@ export async function GET(
           </div>
         </div>
 
-        {/* Footer */}
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
             fontSize: 26,
-            color: "rgba(255,255,255,0.75)",
+            color: bg.textDim,
             letterSpacing: 6,
             textTransform: "uppercase",
             marginTop: 30,

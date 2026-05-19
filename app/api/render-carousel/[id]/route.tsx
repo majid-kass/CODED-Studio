@@ -92,18 +92,15 @@ function SlideFrame({
         backgroundImage: bg.cssOverlay
           ? `${bg.cssOverlay}, ${bg.cssGradient}`
           : bg.cssGradient,
-        color: "#FFFFFF",
+        color: bg.text,
         fontFamily: "sans-serif",
         padding: PAD,
         overflow: "hidden",
       }}
     >
-      {/* Decorative bracket marks in the corners — echo the CODED [bracket]
-          motif and give every slide a consistent framing. */}
-      <CornerBracket x="left" y="top" color="#FFFFFF" opacity={0.18} />
+      <CornerBracket x="left" y="top" color={bg.rule} opacity={0.18} />
       <CornerBracket x="right" y="bottom" color={seg.accent} opacity={0.55} />
 
-      {/* Header row — segment lockup left, slide counter right. */}
       <div
         style={{
           display: "flex",
@@ -112,7 +109,12 @@ function SlideFrame({
           width: "100%",
         }}
       >
-        <SegmentLogo width={300} segment={segmentKey} aiAppDeveloperDataUrl={aiLockup} />
+        <SegmentLogo
+          width={300}
+          segment={segmentKey}
+          aiAppDeveloperDataUrl={aiLockup}
+          color={bg.text}
+        />
         <div
           style={{
             display: "flex",
@@ -120,7 +122,7 @@ function SlideFrame({
             gap: 16,
             fontSize: 22,
             letterSpacing: 6,
-            color: "rgba(255,255,255,0.85)",
+            color: bg.textDim,
             fontWeight: 700,
           }}
         >
@@ -130,14 +132,13 @@ function SlideFrame({
 
       {children}
 
-      {/* Footer row — CODED handles + bracket arrow. */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           fontSize: 22,
-          color: "rgba(255,255,255,0.75)",
+          color: bg.textDim,
           letterSpacing: 6,
           textTransform: "uppercase",
         }}
@@ -304,7 +305,7 @@ function SlideCover({
   headline: string;
   shot: string;
 }) {
-  const { seg } = ctx;
+  const { seg, bg } = ctx;
   return (
     <SlideFrame ctx={ctx} slideNum={1}>
       <div
@@ -335,6 +336,7 @@ function SlideCover({
         <div
           style={{
             display: "flex",
+            color: bg.text,
             fontSize: 88,
             fontWeight: 900,
             lineHeight: 1.0,
@@ -370,7 +372,7 @@ function SlideMeet({
   projectName: string;
   pitch: string;
 }) {
-  const { seg } = ctx;
+  const { seg, bg } = ctx;
   return (
     <SlideFrame ctx={ctx} slideNum={2}>
       <div
@@ -397,6 +399,7 @@ function SlideMeet({
         <div
           style={{
             display: "flex",
+            color: bg.text,
             fontSize: 168,
             fontWeight: 900,
             lineHeight: 0.95,
@@ -411,14 +414,13 @@ function SlideMeet({
             fontSize: 38,
             lineHeight: 1.35,
             fontWeight: 500,
-            color: "rgba(255,255,255,0.88)",
+            color: bg.textDim,
             maxWidth: 780,
             marginTop: 12,
           }}
         >
           {pitch}
         </div>
-        {/* Hairline accent bar */}
         <div
           style={{
             display: "flex",
@@ -449,7 +451,7 @@ function SlideAction({
   slideNum: number;
   objectPosition: "top" | "center" | "bottom";
 }) {
-  const { seg } = ctx;
+  const { seg, bg } = ctx;
   // Pull up to three short feature lines from the caption (newline-split or
   // sentence-split). Caps each at ~48 chars so they fit the layout.
   const parts = caption
@@ -516,7 +518,7 @@ function SlideAction({
                   fontSize: 30,
                   lineHeight: 1.3,
                   fontWeight: 600,
-                  color: "rgba(255,255,255,0.95)",
+                  color: bg.text,
                 }}
               >
                 {p}
@@ -542,8 +544,10 @@ function SlideCTA({
   projectName: string;
   projectUrl: string;
 }) {
-  const { seg } = ctx;
+  const { seg, bg } = ctx;
   const cleanUrl = projectUrl.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  const pillBg = bg.theme === "light" ? seg.accent : "#FFFFFF";
+  const pillFg = bg.theme === "light" ? "#FFFFFF" : "#14243F";
   return (
     <SlideFrame ctx={ctx} slideNum={5}>
       <div
@@ -572,6 +576,7 @@ function SlideCTA({
         <div
           style={{
             display: "flex",
+            color: bg.text,
             fontSize: 130,
             fontWeight: 900,
             lineHeight: 0.95,
@@ -585,8 +590,8 @@ function SlideCTA({
           style={{
             display: "flex",
             padding: "22px 44px",
-            backgroundColor: "#FFFFFF",
-            color: "#14243F",
+            backgroundColor: pillBg,
+            color: pillFg,
             borderRadius: 100,
             fontSize: 32,
             fontWeight: 800,
@@ -600,7 +605,7 @@ function SlideCTA({
           style={{
             display: "flex",
             fontSize: 26,
-            color: "rgba(255,255,255,0.7)",
+            color: bg.textDim,
             lineHeight: 1.4,
             maxWidth: 760,
             marginTop: 36,

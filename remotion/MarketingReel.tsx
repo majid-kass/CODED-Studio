@@ -27,6 +27,9 @@ export const marketingReelSchema = z.object({
   bgGradient: z.string(),
   bgOverlay: z.string(),
   segAccent: z.string(),
+  theme: z.enum(["light", "dark"]),
+  textColor: z.string(),
+  textDimColor: z.string(),
 });
 
 const CANVAS_W = 1080;
@@ -388,6 +391,8 @@ export const MarketingReel: React.FC<
   bgGradient,
   bgOverlay,
   segAccent,
+  textColor,
+  textDimColor,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -512,7 +517,7 @@ export const MarketingReel: React.FC<
       style={{
         backgroundColor: bgBase,
         fontFamily: "sans-serif",
-        color: "#FFFFFF",
+        color: textColor,
       }}
     >
       <AbsoluteFill style={{ backgroundImage: bgGradient, opacity: glowPulse }} />
@@ -769,7 +774,7 @@ export const MarketingReel: React.FC<
           display: "flex",
           justifyContent: "space-between",
           fontSize: 24,
-          color: "rgba(255,255,255,0.75)",
+          color: textDimColor,
           letterSpacing: 6,
           textTransform: "uppercase",
           opacity: interpolate(frame, [60, 110], [0, 1], {

@@ -31,6 +31,9 @@ export const Root = () => {
           bgGradient: "radial-gradient(circle at 50% 60%, rgba(0,185,180,0.4) 0%, #026678 50%, #0a1326 100%)",
           bgOverlay: "",
           segAccent: "#16D7D1",
+          theme: "dark" as const,
+          textColor: "#FFFFFF",
+          textDimColor: "rgba(255,255,255,0.75)",
         }}
       />
     </>
