@@ -32,7 +32,7 @@ const APERTURE_INSET = 12;
 const APERTURE_W = PHONE_W - APERTURE_INSET * 2;
 const APERTURE_H = PHONE_H - APERTURE_INSET * 2;
 
-// Tap ripple animation — expanding ring with fading opacity
+// Tap ripple animation — expanding ring with fading opacity.
 const TapRipple: React.FC<{ x: number; y: number; startFrame: number }> = ({
   x,
   y,
@@ -40,10 +40,10 @@ const TapRipple: React.FC<{ x: number; y: number; startFrame: number }> = ({
 }) => {
   const frame = useCurrentFrame();
   const local = frame - startFrame;
-  if (local < 0 || local > 30) return null;
-  const progress = local / 30;
-  const size = interpolate(progress, [0, 1], [20, 200]);
-  const opacity = interpolate(progress, [0, 0.2, 1], [0, 0.9, 0]);
+  if (local < 0 || local > 28) return null;
+  const progress = local / 28;
+  const size = interpolate(progress, [0, 1], [16, 220]);
+  const opacity = interpolate(progress, [0, 0.15, 1], [0, 0.95, 0]);
   return (
     <div
       style={{
@@ -54,12 +54,107 @@ const TapRipple: React.FC<{ x: number; y: number; startFrame: number }> = ({
         height: size,
         borderRadius: "50%",
         border: "4px solid rgba(255,255,255,0.95)",
-        boxShadow: "0 0 30px rgba(98,255,229,0.6)",
+        boxShadow: "0 0 30px rgba(255,255,255,0.55)",
         opacity,
       }}
     />
   );
 };
+
+// Small finger-tip dot drawn on top of the ripple for tactile clarity.
+const TapDot: React.FC<{ x: number; y: number; startFrame: number }> = ({
+  x,
+  y,
+  startFrame,
+}) => {
+  const frame = useCurrentFrame();
+  const local = frame - startFrame;
+  if (local < -4 || local > 14) return null;
+  const opacity = interpolate(local, [-4, 0, 10, 14], [0, 0.9, 0.9, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const scale = interpolate(local, [-4, 0, 6], [1.4, 1.0, 0.85], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: x - 14,
+        top: y - 14,
+        width: 28,
+        height: 28,
+        borderRadius: "50%",
+        backgroundColor: "rgba(255,255,255,0.85)",
+        boxShadow: "0 0 20px rgba(255,255,255,0.6)",
+        opacity,
+        transform: `scale(${scale})`,
+      }}
+    />
+  );
+};
+
+// Page navigation cycle: hold on a section, tap, snap to next section.
+// Phone screen behaves like a tap-driven scrolling app, not a smooth scroll.
+type PageStop = {
+  scrollY: number;       // negative offset applied to the screenshot
+  holdFrames: number;    // settle + hold on this page
+  jumpFrames: number;    // spring transition to the next page (0 for last)
+  tapX: number;          // ripple x within aperture
+  tapY: number;          // ripple y within aperture
+  startFrame: number;    // global frame where this stop begins
+};
+
+function buildPageStops(
+  scrollDistance: number,
+  navStart: number,
+  navEnd: number
+): PageStop[] {
+  const navFrames = navEnd - navStart;
+  // Number of "pages" to visit. If the screenshot fits in one aperture, still
+  // do 2 stops so a tap-and-jump happens; otherwise space them by aperture
+  // height with a soft cap so each page gets enough screen time.
+  const ideal = Math.ceil(scrollDistance / (APERTURE_H * 0.85)) + 1;
+  const stopCount = Math.max(2, Math.min(5, ideal));
+
+  // Scroll positions are evenly spaced along the available scroll distance.
+  // Last position lands exactly at scrollDistance so the page bottom is shown.
+  const positions: number[] = [];
+  for (let i = 0; i < stopCount; i++) {
+    const t = stopCount === 1 ? 0 : i / (stopCount - 1);
+    positions.push(-scrollDistance * t);
+  }
+
+  const perStopFrames = Math.floor(navFrames / stopCount);
+  const jumpFrames = Math.min(18, Math.floor(perStopFrames * 0.25));
+
+  // Tap targets cycle through plausible positions: primary CTA, mid-card, nav,
+  // back to CTA. Anchored in aperture-relative coords.
+  const tapPattern: [number, number][] = [
+    [0.5, 0.74],
+    [0.5, 0.42],
+    [0.78, 0.18],
+    [0.5, 0.66],
+    [0.32, 0.5],
+  ];
+
+  const stops: PageStop[] = [];
+  for (let i = 0; i < stopCount; i++) {
+    const isLast = i === stopCount - 1;
+    const [tx, ty] = tapPattern[i % tapPattern.length];
+    stops.push({
+      scrollY: positions[i],
+      holdFrames: perStopFrames - (isLast ? 0 : jumpFrames),
+      jumpFrames: isLast ? 0 : jumpFrames,
+      tapX: APERTURE_W * tx,
+      tapY: APERTURE_H * ty,
+      startFrame: navStart + i * perStopFrames,
+    });
+  }
+  return stops;
+}
 
 export const MarketingReel: React.FC<
   z.infer<typeof marketingReelSchema>
@@ -79,10 +174,8 @@ export const MarketingReel: React.FC<
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // --- Background pulse ---
   const glowPulse = 0.85 + 0.15 * Math.sin((frame / fps) * Math.PI * 0.4);
 
-  // --- Logo: fade + drift in (0–1s) ---
   const logoOpacity = interpolate(frame, [10, 40], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
@@ -92,7 +185,6 @@ export const MarketingReel: React.FC<
     extrapolateRight: "clamp",
   });
 
-  // --- Eyebrow: spring up (1–2s) ---
   const eyebrowProgress = spring({
     frame: frame - 30,
     fps,
@@ -101,12 +193,10 @@ export const MarketingReel: React.FC<
   const eyebrowY = interpolate(eyebrowProgress, [0, 1], [30, 0]);
   const eyebrowOpacity = interpolate(eyebrowProgress, [0, 1], [0, 1]);
 
-  // --- Headline: word-by-word (1.3–2.5s) ---
   const words = headline.split(" ");
   const headlineStart = 40;
   const wordGap = 4;
 
-  // --- Phone: spring up from bottom (2–4s) ---
   const phoneProgress = spring({
     frame: frame - 60,
     fps,
@@ -115,23 +205,48 @@ export const MarketingReel: React.FC<
   const phoneY = interpolate(phoneProgress, [0, 1], [700, 0]);
   const phoneOpacity = interpolate(phoneProgress, [0, 1], [0, 1]);
 
-  // --- Screenshot scroll math ---
-  // Fit screenshot width to aperture width, scale height proportionally.
+  // Tap-driven page navigation. Phone enters at f60–f120; nav runs f120–f720;
+  // CTA chip overlays f825–f900.
   const imgScale = APERTURE_W / shotWidth;
   const imgDisplayHeight = shotHeight * imgScale;
   const scrollDistance = Math.max(0, imgDisplayHeight - APERTURE_H);
 
-  // Scroll happens between f120 (4s) and f720 (24s). Cosine-ease for smooth feel.
-  const scrollStart = 120;
-  const scrollEnd = 720;
-  const scrollRaw = interpolate(frame, [scrollStart, scrollEnd], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const scrollEased = 0.5 - 0.5 * Math.cos(scrollRaw * Math.PI);
-  const screenshotY = -scrollEased * scrollDistance;
+  const navStart = 120;
+  const navEnd = 720;
+  const stops = buildPageStops(scrollDistance, navStart, navEnd);
 
-  // --- Final CTA tag: fade in (27.5–29s) ---
+  // Current scroll position: hold at stop[i].scrollY during hold window, then
+  // spring-transition to stop[i+1].scrollY during the jump window.
+  let screenshotY = stops[0].scrollY;
+  if (frame >= navStart) {
+    for (let i = 0; i < stops.length; i++) {
+      const stop = stops[i];
+      const holdEnd = stop.startFrame + stop.holdFrames;
+      const jumpEnd = holdEnd + stop.jumpFrames;
+      const next = stops[i + 1];
+      if (frame < holdEnd) {
+        screenshotY = stop.scrollY;
+        break;
+      }
+      if (frame < jumpEnd && next) {
+        // Spring-eased snap to next page — feels like the app jumping on tap.
+        const jp = spring({
+          frame: frame - holdEnd,
+          fps,
+          durationInFrames: stop.jumpFrames,
+          config: { damping: 16, stiffness: 200, mass: 0.7 },
+        });
+        screenshotY = interpolate(jp, [0, 1], [stop.scrollY, next.scrollY]);
+        break;
+      }
+      if (i === stops.length - 1) screenshotY = stop.scrollY;
+    }
+  }
+  // After nav ends, stay on the final stop.
+  if (frame >= navEnd) {
+    screenshotY = stops[stops.length - 1].scrollY;
+  }
+
   const ctaOpacity = interpolate(frame, [825, 870], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
@@ -145,14 +260,12 @@ export const MarketingReel: React.FC<
         color: "#FFFFFF",
       }}
     >
-      {/* Segment-branded gradient background */}
       <AbsoluteFill
         style={{
           backgroundImage: bgGradient,
           opacity: glowPulse,
         }}
       />
-      {/* Optional second-layer brand overlay (per-segment) */}
       {bgOverlay && (
         <AbsoluteFill
           style={{
@@ -162,9 +275,7 @@ export const MarketingReel: React.FC<
         />
       )}
 
-      {/* Foreground content stack */}
       <AbsoluteFill style={{ padding: "70px 60px", display: "flex" }}>
-        {/* Logo */}
         <div
           style={{
             opacity: logoOpacity,
@@ -174,7 +285,6 @@ export const MarketingReel: React.FC<
           <Img src={logoDataUrl} style={{ width: 320, height: "auto" }} />
         </div>
 
-        {/* Eyebrow */}
         <div
           style={{
             marginTop: 40,
@@ -190,7 +300,6 @@ export const MarketingReel: React.FC<
           Built with AI · {segmentLabel}
         </div>
 
-        {/* Headline */}
         <div
           style={{
             marginTop: 18,
@@ -225,7 +334,6 @@ export const MarketingReel: React.FC<
           })}
         </div>
 
-        {/* Phone mockup */}
         <div
           style={{
             flexGrow: 1,
@@ -249,7 +357,6 @@ export const MarketingReel: React.FC<
               transform: `translateY(${phoneY}px)`,
             }}
           >
-            {/* Aperture */}
             <div
               style={{
                 position: "relative",
@@ -270,7 +377,6 @@ export const MarketingReel: React.FC<
                   transform: `translateY(${screenshotY}px)`,
                 }}
               />
-              {/* Dynamic island */}
               <div
                 style={{
                   position: "absolute",
@@ -284,12 +390,19 @@ export const MarketingReel: React.FC<
                 }}
               />
 
-              {/* Tap ripples — positioned within aperture coordinates */}
-              <TapRipple x={APERTURE_W * 0.5} y={APERTURE_H * 0.78} startFrame={240} />
-              <TapRipple x={APERTURE_W * 0.5} y={APERTURE_H * 0.55} startFrame={450} />
-              <TapRipple x={APERTURE_W * 0.5} y={APERTURE_H * 0.70} startFrame={660} />
+              {/* Tap feedback — one ripple + finger dot per page stop, fired
+                  ~24 frames before the jump so the cause-and-effect reads. */}
+              {stops.map((stop, i) => {
+                if (i === stops.length - 1) return null;
+                const tapFrame = stop.startFrame + stop.holdFrames - 24;
+                return (
+                  <span key={i}>
+                    <TapRipple x={stop.tapX} y={stop.tapY} startFrame={tapFrame} />
+                    <TapDot x={stop.tapX} y={stop.tapY} startFrame={tapFrame} />
+                  </span>
+                );
+              })}
 
-              {/* Final CTA chip pinned to bottom of aperture */}
               <div
                 style={{
                   position: "absolute",
@@ -316,7 +429,6 @@ export const MarketingReel: React.FC<
           </div>
         </div>
 
-        {/* Footer */}
         <div
           style={{
             display: "flex",
