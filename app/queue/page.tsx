@@ -1,8 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 import { listSubmissions } from "@/lib/store";
 import { SubmissionCard } from "@/components/SubmissionCard";
 import { SignOutButton } from "@/components/SignOutButton";
+import { CodedLogo } from "@/components/CodedLogo";
 import { readCachedShot, screenshotUrl } from "@/lib/screenshot";
 import { supabaseServer } from "@/lib/supabase/server";
 
@@ -28,14 +28,7 @@ export default async function QueuePage() {
     <main className="min-h-screen">
       <header className="px-6 sm:px-8 py-5 flex items-center justify-between gap-4 border-b border-white/5">
         <Link href="/" className="flex items-center gap-3 min-w-0">
-          <Image
-            src="/brand/coded-logo-white.png"
-            alt="CODED"
-            width={90}
-            height={32}
-            style={{ height: "auto" }}
-            className="flex-shrink-0"
-          />
+          <CodedLogo width={90} />
           <span className="hidden sm:inline text-[10px] uppercase tracking-[0.25em] text-white/40 whitespace-nowrap">
             Marketing queue
           </span>

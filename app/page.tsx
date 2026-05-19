@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { CodedLogo } from "@/components/CodedLogo";
 import {
   SEGMENT_OPTIONS,
   type SegmentKey,
@@ -68,14 +68,7 @@ export default function SubmitPage() {
       />
 
       <header className="relative z-10 px-6 sm:px-10 py-6 flex items-center justify-between">
-        <Image
-          src="/brand/coded-logo-white.png"
-          alt="CODED"
-          width={110}
-          height={38}
-          style={{ height: "auto" }}
-          priority
-        />
+        <CodedLogo width={110} />
         {signedIn ? (
           <Link
             href="/queue"

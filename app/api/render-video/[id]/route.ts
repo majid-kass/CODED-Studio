@@ -11,6 +11,15 @@ import {
 import sharp from "sharp";
 import { brandBg, getSegment } from "@/lib/brandTheme";
 
+// Disable Webpack persistent disk cache so MarketingReel edits show up on
+// the very next render. Without this, even mtime-busting the in-memory
+// bundle promise can re-hydrate from .next/cache and replay the old reel.
+function disablePersistentCache(config: object) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (config as any).cache = false;
+  return config;
+}
+
 export const runtime = "nodejs";
 export const maxDuration = 600;
 
@@ -47,15 +56,10 @@ async function getBundle() {
     bundleSig = sig;
     bundleCache = bundle({
       entryPoint: path.join(process.cwd(), "remotion", "index.ts"),
-      webpackOverride: (config) => config,
+      webpackOverride: disablePersistentCache,
     });
   }
   return bundleCache;
-}
-
-async function fileDataUrl(rel: string, mime: string) {
-  const buf = await fs.readFile(path.join(process.cwd(), "public", rel));
-  return `data:${mime};base64,${buf.toString("base64")}`;
 }
 
 function bufferToDataUrl(buf: Buffer, mime = "image/png") {
@@ -87,9 +91,8 @@ export async function GET(
     const seg = getSegment(s.segment);
     const bg = brandBg(seg);
 
-    const [serveUrl, logoDataUrl, shotBuf] = await Promise.all([
+    const [serveUrl, shotBuf] = await Promise.all([
       getBundle(),
-      fileDataUrl("brand/coded-logo-white.png", "image/png"),
       getOrFetchShot(id, s.url),
     ]);
 
@@ -102,7 +105,6 @@ export async function GET(
       headline: s.headline,
       projectName: s.name,
       segmentLabel: seg.label,
-      logoDataUrl,
       shotDataUrl,
       shotWidth,
       shotHeight,

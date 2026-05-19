@@ -1,22 +1,16 @@
 import { ImageResponse } from "next/og";
-import { promises as fs } from "fs";
-import path from "path";
 import sharp from "sharp";
 import JSZip from "jszip";
 import { listSubmissions } from "@/lib/store";
 import { microlinkUrl, readCachedShot, writeCachedShot } from "@/lib/screenshot";
 import { brandBg, getSegment, type BgTreatment, type SegmentPalette } from "@/lib/brandTheme";
+import { CodedLogo } from "@/components/CodedLogo";
 
 export const runtime = "nodejs";
 
 // Instagram carousel slides are 1080×1350 (4:5 portrait, the IG-recommended ratio).
 const W = 1080;
 const H = 1350;
-
-async function fileDataUrl(rel: string, mime: string) {
-  const buf = await fs.readFile(path.join(process.cwd(), "public", rel));
-  return `data:${mime};base64,${buf.toString("base64")}`;
-}
 
 function bufferToDataUrl(buf: Buffer, mime = "image/png") {
   return `data:${mime};base64,${buf.toString("base64")}`;
@@ -55,7 +49,6 @@ async function cropAtScroll(
 }
 
 type SlideAssets = {
-  logo: string;
   hero: string;
   middle: string;
   bottom: string;
@@ -89,8 +82,7 @@ function Slide1Hero({
   return (
     <div style={bgStyle(bg)}>
       <div style={{ display: "flex", flexDirection: "column" }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={assets.logo} width={300} height={104} alt="" />
+        <CodedLogo width={300} />
         <div
           style={{
             fontSize: 26,
@@ -194,8 +186,7 @@ function SlideName({
   return (
     <div style={bgStyle(bg)}>
       <div style={{ display: "flex" }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={assets.logo} width={240} height={84} alt="" />
+        <CodedLogo width={240} />
       </div>
       <div
         style={{
@@ -274,8 +265,7 @@ function SlidePhone({
   return (
     <div style={bgStyle(bg)}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={assets.logo} width={220} height={76} alt="" />
+        <CodedLogo width={220} />
         <div
           style={{
             fontSize: 22,
@@ -378,8 +368,7 @@ function SlideCTA({
   return (
     <div style={bgStyle(bg)}>
       <div style={{ display: "flex" }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={assets.logo} width={240} height={84} alt="" />
+        <CodedLogo width={240} />
       </div>
       <div
         style={{
@@ -469,10 +458,7 @@ export async function GET(
     const seg = getSegment(s.segment);
     const bg = brandBg(seg);
 
-    const [logoDataUrl, shotBuf] = await Promise.all([
-      fileDataUrl("brand/coded-logo-white.png", "image/png"),
-      getOrFetchShot(id, s.url),
-    ]);
+    const shotBuf = await getOrFetchShot(id, s.url);
 
     const meta = await sharp(shotBuf).metadata();
     const shotW = meta.width ?? 780;
@@ -486,7 +472,6 @@ export async function GET(
     ]);
 
     const assets: SlideAssets = {
-      logo: logoDataUrl,
       hero: heroShot,
       middle: midShot,
       bottom: bottomShot,

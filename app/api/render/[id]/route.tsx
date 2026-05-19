@@ -1,17 +1,11 @@
 import { ImageResponse } from "next/og";
-import { promises as fs } from "fs";
-import path from "path";
 import sharp from "sharp";
 import { listSubmissions } from "@/lib/store";
 import { microlinkUrl, readCachedShot, writeCachedShot } from "@/lib/screenshot";
 import { brandBg, getSegment } from "@/lib/brandTheme";
+import { CodedLogo } from "@/components/CodedLogo";
 
 export const runtime = "nodejs";
-
-async function fileDataUrl(rel: string, mime: string) {
-  const buf = await fs.readFile(path.join(process.cwd(), "public", rel));
-  return `data:${mime};base64,${buf.toString("base64")}`;
-}
 
 function bufferToDataUrl(buf: Buffer, mime = "image/png") {
   return `data:${mime};base64,${buf.toString("base64")}`;
@@ -41,10 +35,7 @@ export async function GET(
   const seg = getSegment(s.segment);
   const bg = brandBg(seg);
 
-  const [logoDataUrl, shotBuf] = await Promise.all([
-    fileDataUrl("brand/coded-logo-white.png", "image/png"),
-    getOrFetchShot(id, s.url),
-  ]);
+  const shotBuf = await getOrFetchShot(id, s.url);
 
   const meta = await sharp(shotBuf).metadata();
 
@@ -83,8 +74,7 @@ export async function GET(
         }}
       >
         <div style={{ display: "flex", flexDirection: "column" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={logoDataUrl} width={320} height={112} alt="" />
+          <CodedLogo width={320} />
           <div
             style={{
               fontSize: 28,

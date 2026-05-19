@@ -7,6 +7,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import { z } from "zod";
+import { CodedLogo } from "../components/CodedLogo";
 
 export const REEL_FPS = 30;
 export const REEL_DURATION_FRAMES = 900; // 30s
@@ -15,7 +16,6 @@ export const marketingReelSchema = z.object({
   headline: z.string(),
   projectName: z.string(),
   segmentLabel: z.string(),
-  logoDataUrl: z.string(),
   shotDataUrl: z.string(),
   shotWidth: z.number(),
   shotHeight: z.number(),
@@ -376,7 +376,6 @@ export const MarketingReel: React.FC<
   headline,
   projectName,
   segmentLabel,
-  logoDataUrl,
   shotDataUrl,
   shotWidth,
   shotHeight,
@@ -534,7 +533,7 @@ export const MarketingReel: React.FC<
             display: "flex",
           }}
         >
-          <Img src={logoDataUrl} style={{ width: 320, height: "auto" }} />
+          <CodedLogo width={320} />
         </div>
         <div
           style={{
