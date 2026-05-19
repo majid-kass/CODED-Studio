@@ -18,11 +18,33 @@ export const maxDuration = 600;
 // during long-running operations which was killing FFmpeg's moov-atom finalize.
 const RENDERS_DIR = () => path.join(process.cwd(), "data", "renders");
 
-// Cache the bundled Remotion project so subsequent renders are fast.
+// Cache the bundled Remotion project so subsequent renders are fast. Invalidate
+// when any file under remotion/ changes — otherwise editing MarketingReel.tsx
+// without touching this route would never bust the cache.
 let bundleCache: Promise<string> | null = null;
+let bundleSig: string | null = null;
 
-function getBundle() {
-  if (!bundleCache) {
+async function remotionSignature(): Promise<string> {
+  const dir = path.join(process.cwd(), "remotion");
+  const out: string[] = [];
+  async function walk(d: string) {
+    for (const name of await fs.readdir(d)) {
+      const full = path.join(d, name);
+      const stat = await fs.stat(full);
+      if (stat.isDirectory()) await walk(full);
+      else if (/\.(tsx?|jsx?|json)$/.test(name)) {
+        out.push(`${full}:${stat.mtimeMs}`);
+      }
+    }
+  }
+  await walk(dir);
+  return out.sort().join("|");
+}
+
+async function getBundle() {
+  const sig = await remotionSignature();
+  if (!bundleCache || bundleSig !== sig) {
+    bundleSig = sig;
     bundleCache = bundle({
       entryPoint: path.join(process.cwd(), "remotion", "index.ts"),
       webpackOverride: (config) => config,
