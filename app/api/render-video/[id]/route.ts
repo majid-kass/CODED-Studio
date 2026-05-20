@@ -7,9 +7,12 @@ import {
   microlinkUrl,
   readCachedShot,
   writeCachedShot,
+  type Viewport,
 } from "@/lib/screenshot";
 import sharp from "sharp";
 import { brandBg, getSegment } from "@/lib/brandTheme";
+import { parseRenderOptions, applyThemeOverride } from "@/lib/renderOptions";
+import { readWalkthroughFrames } from "@/lib/walkthrough";
 
 // Disable Webpack persistent disk cache so MarketingReel edits show up on
 // the very next render. Without this, even mtime-busting the in-memory
@@ -71,20 +74,24 @@ function bufferToDataUrl(buf: Buffer, mime = "image/png") {
   return `data:${mime};base64,${buf.toString("base64")}`;
 }
 
-async function getOrFetchShot(id: string, url: string): Promise<Buffer> {
-  const cached = await readCachedShot(id);
+async function getOrFetchShot(
+  id: string,
+  url: string,
+  viewport: Viewport,
+): Promise<Buffer> {
+  const cached = await readCachedShot(id, viewport);
   if (cached) return cached;
-  const res = await fetch(microlinkUrl(url, { fullPage: true }), {
+  const res = await fetch(microlinkUrl(url, { fullPage: true, viewport }), {
     signal: AbortSignal.timeout(45_000),
   });
   if (!res.ok) throw new Error(`Screenshot fetch failed: ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
-  await writeCachedShot(id, buf);
+  await writeCachedShot(id, buf, viewport);
   return buf;
 }
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
@@ -93,21 +100,29 @@ export async function GET(
   if (!s) return new Response("Not found", { status: 404 });
 
   try {
-    const seg = getSegment(s.segment);
-    const bg = brandBg(seg);
+    const { themeOverride, mockup } = parseRenderOptions(req);
+    const viewport: Viewport = mockup === "laptop" ? "desktop" : "mobile";
 
-    const [serveUrl, shotBuf, aiLockup] = await Promise.all([
+    const seg = getSegment(s.segment);
+    const bg = applyThemeOverride(brandBg(seg), themeOverride);
+
+    const [serveUrl, shotBuf, aiLockup, walkFrames] = await Promise.all([
       getBundle(),
-      getOrFetchShot(id, s.url),
+      getOrFetchShot(id, s.url, viewport),
       seg.key === "ai-app-developer"
         ? fileDataUrl("brand/ai-app-developer-white.png", "image/png")
         : Promise.resolve(""),
+      readWalkthroughFrames(id, viewport),
     ]);
 
     const meta = await sharp(shotBuf).metadata();
-    const shotWidth = s.shotWidth ?? meta.width ?? 780;
-    const shotHeight = s.shotHeight ?? meta.height ?? 1688;
+    const shotWidth = s.shotWidth ?? meta.width ?? (viewport === "desktop" ? 1440 : 780);
+    const shotHeight = s.shotHeight ?? meta.height ?? (viewport === "desktop" ? 900 : 1688);
     const shotDataUrl = bufferToDataUrl(shotBuf);
+    // Each walkthrough frame becomes a data URL passed to Remotion. Empty
+    // array (no walkthrough run yet) falls back to the long-page scroll
+    // behaviour the Reel already supports.
+    const walkthroughFrames = walkFrames.map((buf) => bufferToDataUrl(buf));
 
     const inputProps = {
       headline: s.headline,
@@ -127,6 +142,8 @@ export async function GET(
       textColor: bg.text,
       textDimColor: bg.textDim,
       features: s.features ?? [],
+      mockup,
+      walkthroughFrames,
     };
 
     const composition = await selectComposition({

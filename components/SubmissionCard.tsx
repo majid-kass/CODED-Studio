@@ -103,9 +103,9 @@ export function SubmissionCard({ submission, screenshotSrc, hasScreenshot }: Pro
 
     // Warm the screenshot cache first so the three renders below don't all
     // race to call Microlink in parallel.
-    // Warm the right screenshot viewport. Laptop mockup needs a desktop
-    // capture; phone uses the mobile capture. Each viewport has its own
-    // cache key so they don't trample each other.
+    // Warm the right screenshot viewport (laptop=desktop, phone=mobile).
+    // If Reel is selected, also run a Playwright walkthrough so the Reel
+    // cuts between actual app pages instead of scrolling one screenshot.
     setWarming(true);
     try {
       const viewportQs = mockup === "laptop" ? "&viewport=desktop" : "";
@@ -117,6 +117,19 @@ export function SubmissionCard({ submission, screenshotSrc, hasScreenshot }: Pro
         );
       }
       setScreenshotReady(true);
+
+      if (selected.reel) {
+        const walkVp = mockup === "laptop" ? "?viewport=desktop" : "";
+        const wres = await fetch(`/api/walkthrough/${submission.id}${walkVp}`, {
+          method: "POST",
+        });
+        if (!wres.ok) {
+          // Walkthrough is best-effort: surface the reason but let the user
+          // still render — the Reel will fall back to scrolling one shot.
+          const detail = (await wres.text().catch(() => "")).slice(0, 200);
+          setError(`Walkthrough capture failed (${wres.status})${detail ? ` — ${detail}` : ""} · Reel will fall back to scroll.`);
+        }
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Screenshot capture failed");
       setWarming(false);

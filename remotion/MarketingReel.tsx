@@ -30,10 +30,16 @@ export const marketingReelSchema = z.object({
   theme: z.enum(["light", "dark"]),
   textColor: z.string(),
   textDimColor: z.string(),
-  /** Short app-feature bullets ("Live availability", "Instant booking", …).
-      Used in scene 3 pill badges + scene 5 infographic so the Reel reads as
-      an ad for THIS app, not for the bootcamp. */
   features: z.array(z.string()),
+  /** "phone" → portrait mockup with tilt + scroll motion (default).
+      "laptop" → static landscape mockup that holds center (no tilt, no
+      scale-to-side) so the Reel scene structure still works without a
+      redesign. */
+  mockup: z.enum(["phone", "laptop"]),
+  /** Sequence of viewport-sized screenshots from a real Playwright walkthrough
+      (landing page → up to 4 internal pages). When non-empty the Reel cuts
+      between these on each tap instead of scrolling one long screenshot. */
+  walkthroughFrames: z.array(z.string()),
 });
 
 const CANVAS_W = 1080;
@@ -292,13 +298,124 @@ const TapDot: React.FC<{ x: number; y: number; start: number }> = ({
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Phone — composed and transformed by the parent. Holds the screenshot scroll.
-const Phone: React.FC<{
+// Device — phone or laptop frame. In walkthrough mode the inner image cuts
+// between captured pages (objectFit: cover, no translate). In scroll mode it
+// renders the single long screenshot with a translateY for paged scroll.
+type DeviceProps = {
+  mockup: "phone" | "laptop";
   shotDataUrl: string;
   imgHeight: number;
   scrollY: number;
+  walkMode: boolean;
+  apertureW: number;
+  apertureH: number;
   taps?: { x: number; y: number; start: number }[];
-}> = ({ shotDataUrl, imgHeight, scrollY, taps = [] }) => {
+};
+
+const Device: React.FC<DeviceProps> = ({
+  mockup,
+  shotDataUrl,
+  imgHeight,
+  scrollY,
+  walkMode,
+  apertureW,
+  apertureH,
+  taps = [],
+}) => {
+  if (mockup === "laptop") {
+    const frameW = apertureW + 28;
+    const frameH = apertureH + 28;
+    const baseW = Math.round(frameW * 1.07);
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        <div
+          style={{
+            position: "relative",
+            width: frameW,
+            height: frameH,
+            backgroundColor: "#0a0a0a",
+            borderRadius: 22,
+            padding: 14,
+            display: "flex",
+            boxShadow: "0 40px 100px rgba(0,0,0,0.6)",
+          }}
+        >
+          <div
+            style={{
+              position: "relative",
+              width: apertureW,
+              height: apertureH,
+              borderRadius: 10,
+              overflow: "hidden",
+              backgroundColor: "#FFFFFF",
+              display: "flex",
+            }}
+          >
+            {walkMode ? (
+              <Img
+                src={shotDataUrl}
+                style={{
+                  width: apertureW,
+                  height: apertureH,
+                  display: "block",
+                  objectFit: "cover",
+                  objectPosition: "top",
+                }}
+              />
+            ) : (
+              <Img
+                src={shotDataUrl}
+                style={{
+                  width: apertureW,
+                  height: imgHeight,
+                  display: "block",
+                  transform: `translateY(${scrollY}px)`,
+                }}
+              />
+            )}
+            <div
+              style={{
+                position: "absolute",
+                top: 6,
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: 8,
+                height: 8,
+                backgroundColor: "rgba(255,255,255,0.5)",
+                borderRadius: 999,
+                display: "flex",
+              }}
+            />
+            {taps.map((t, i) => (
+              <span key={i}>
+                <TapRipple x={t.x} y={t.y} start={t.start} />
+                <TapDot x={t.x} y={t.y} start={t.start} />
+              </span>
+            ))}
+          </div>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            width: baseW,
+            height: 24,
+            marginTop: 3,
+            backgroundImage:
+              "linear-gradient(to bottom, #1a1a1a 0%, #2a2a2a 40%, #0a0a0a 100%)",
+            borderRadius: `0 0 24px 24px`,
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Phone
   return (
     <div
       style={{
@@ -315,23 +432,36 @@ const Phone: React.FC<{
       <div
         style={{
           position: "relative",
-          width: APERTURE_W,
-          height: APERTURE_H,
+          width: apertureW,
+          height: apertureH,
           borderRadius: 68,
           overflow: "hidden",
           backgroundColor: "#FFFFFF",
           display: "flex",
         }}
       >
-        <Img
-          src={shotDataUrl}
-          style={{
-            width: APERTURE_W,
-            height: imgHeight,
-            display: "block",
-            transform: `translateY(${scrollY}px)`,
-          }}
-        />
+        {walkMode ? (
+          <Img
+            src={shotDataUrl}
+            style={{
+              width: apertureW,
+              height: apertureH,
+              display: "block",
+              objectFit: "cover",
+              objectPosition: "top",
+            }}
+          />
+        ) : (
+          <Img
+            src={shotDataUrl}
+            style={{
+              width: apertureW,
+              height: imgHeight,
+              display: "block",
+              transform: `translateY(${scrollY}px)`,
+            }}
+          />
+        )}
         <div
           style={{
             position: "absolute",
@@ -410,6 +540,8 @@ export const MarketingReel: React.FC<
   textColor,
   textDimColor,
   features,
+  mockup,
+  walkthroughFrames,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -456,54 +588,87 @@ export const MarketingReel: React.FC<
   // Scene 5 infographic: phone shrinks (~0.75) and slides right
   // Scene 6 cta:       phone returns to center, scale 0.9
 
+  const isLaptop = mockup === "laptop";
+
   const t3 = ramp(frame, SCENES.sideways[0] - 10, SCENES.sideways[0] + 30);
   const t3End = ramp(frame, SCENES.upright[0] - 20, SCENES.upright[0] + 30);
-  const tiltDeg = interpolate(t3 - t3End, [0, 1], [0, -14]);
-  const sidewaysShiftX = interpolate(t3 - t3End, [0, 1], [0, -90]);
+  // Laptop never tilts (the 14° rotation doesn't read on a landscape device);
+  // we keep the phone motion intact when mockup === "phone".
+  const tiltDeg = isLaptop ? 0 : interpolate(t3 - t3End, [0, 1], [0, -14]);
+  const sidewaysShiftX = isLaptop ? 0 : interpolate(t3 - t3End, [0, 1], [0, -90]);
 
   const t5 = ramp(frame, SCENES.infographic[0] - 20, SCENES.infographic[0] + 30);
   const t5End = ramp(frame, SCENES.cta[0] - 30, SCENES.cta[0] + 10);
   const t5Net = Math.max(0, t5 - t5End);
-  const shrink = interpolate(t5Net, [0, 1], [1, 0.62]);
-  const shrinkShiftX = interpolate(t5Net, [0, 1], [0, 220]);
+  // Laptop also skips the scene-5 shrink-and-slide-right since it occupies the
+  // canvas width differently — it just stays centered.
+  const shrink = isLaptop ? 1 : interpolate(t5Net, [0, 1], [1, 0.62]);
+  const shrinkShiftX = isLaptop ? 0 : interpolate(t5Net, [0, 1], [0, 220]);
 
-  // Final settle for CTA: phone scales to 0.9 and stays in lower half.
   const t6 = ramp(frame, SCENES.cta[0] - 20, SCENES.cta[0] + 30);
   const ctaScale = interpolate(t6, [0, 1], [1, 0.9]);
   const ctaShiftY = interpolate(t6, [0, 1], [0, 40]);
 
-  // Compose phone transform — multiplication order matters.
   const finalScale = shrink * ctaScale;
   const finalShiftX = sidewaysShiftX + shrinkShiftX;
   const finalShiftY = phoneEnterY + ctaShiftY;
   const phoneTransform = `translate(${finalShiftX}px, ${finalShiftY}px) rotate(${tiltDeg}deg) scale(${finalScale})`;
 
-  // ── Screenshot navigation: page through the long shot via taps ──────────
-  const imgScale = APERTURE_W / shotWidth;
-  const imgDisplayHeight = shotHeight * imgScale;
-  const scrollDistance = Math.max(0, imgDisplayHeight - APERTURE_H);
+  // ── App navigation: cut between Playwright walkthrough frames on tap ────
+  // If we have multiple captured pages, each "stop" shows the next page —
+  // a real click-through of the app. With zero or one frame, fall back to
+  // tap-paged scroll positions on the single long-page screenshot.
+  const useWalk = walkthroughFrames && walkthroughFrames.length > 1;
 
-  // 5 tap stops spaced across nav window (reveal → end of upright scene).
-  const navStart = SCENES.reveal[0] + 30; // f120 — after phone has settled
+  // Mockup geometry — phone vs laptop. Phone keeps the existing 9:19.5
+  // aperture; laptop is a wider 16:10 panel anchored center.
+  const apertureW = isLaptop ? 880 : APERTURE_W;
+  const apertureH = isLaptop ? Math.round(apertureW / (16 / 10)) : APERTURE_H;
+
+  const imgScale = apertureW / shotWidth;
+  const imgDisplayHeight = shotHeight * imgScale;
+  const scrollDistance = useWalk ? 0 : Math.max(0, imgDisplayHeight - apertureH);
+
+  const navStart = SCENES.reveal[0] + 30;
   const navEnd = SCENES.upright[1] - 20;
-  const stopCount = 5;
+  const stopCount = useWalk
+    ? Math.min(walkthroughFrames.length, 5)
+    : 5;
   const stopGap = Math.floor((navEnd - navStart) / stopCount);
-  const stops = [0, 0.25, 0.55, 0.8, 1.0]
-    .slice(0, stopCount)
-    .map((t, i) => ({
-      at: navStart + i * stopGap,
-      t,
-      jumpFrames: 16,
-    }));
+  // Each stop's scroll fraction is evenly spaced when in scroll fallback
+  // mode; in walkthrough mode the scroll is moot (we cut images instead).
+  const stops = Array.from({ length: stopCount }, (_, i) => ({
+    at: navStart + i * stopGap,
+    t: stopCount === 1 ? 0 : i / (stopCount - 1),
+    jumpFrames: 16,
+    frameIndex: i,
+  }));
   const screenshotY = navScroll(frame, fps, scrollDistance, stops);
 
-  // Tap markers — one per page transition (skip last).
-  const tapTargets: [number, number][] = [
-    [APERTURE_W * 0.5, APERTURE_H * 0.72],
-    [APERTURE_W * 0.78, APERTURE_H * 0.22],
-    [APERTURE_W * 0.5, APERTURE_H * 0.5],
-    [APERTURE_W * 0.32, APERTURE_H * 0.66],
-  ];
+  // Walkthrough mode: figure out which captured page should be on screen
+  // right now. Cuts happen at `at + jumpFrames` so the tap ripple's impact
+  // visually advances the page.
+  let currentFrameIndex = 0;
+  for (const s of stops) {
+    if (frame >= s.at + s.jumpFrames) currentFrameIndex = s.frameIndex;
+  }
+  const currentFrameSrc = useWalk
+    ? walkthroughFrames[Math.min(currentFrameIndex, walkthroughFrames.length - 1)]
+    : shotDataUrl;
+
+  const tapTargets: [number, number][] = isLaptop
+    ? [
+        [apertureW * 0.7, apertureH * 0.5],
+        [apertureW * 0.2, apertureH * 0.7],
+        [apertureW * 0.55, apertureH * 0.35],
+        [apertureW * 0.85, apertureH * 0.65],
+      ]
+    : [
+        [apertureW * 0.5, apertureH * 0.72],
+        [apertureW * 0.78, apertureH * 0.22],
+        [apertureW * 0.5, apertureH * 0.5],
+        [apertureW * 0.32, apertureH * 0.66],
+      ];
   const taps = stops.slice(0, -1).map((s, i) => ({
     x: tapTargets[i % tapTargets.length][0],
     y: tapTargets[i % tapTargets.length][1],
@@ -617,24 +782,32 @@ export const MarketingReel: React.FC<
         </div>
       </div>
 
-      {/* ── Phone (transformed per scene) ───────────────────────────────── */}
+      {/* ── Device (phone or laptop, transformed per scene) ─────────────── */}
       <div
         style={{
           position: "absolute",
-          top: CANVAS_H / 2 - PHONE_H / 2 + 80,
-          left: CANVAS_W / 2 - PHONE_W / 2,
-          width: PHONE_W,
-          height: PHONE_H,
+          top: isLaptop
+            ? CANVAS_H / 2 - apertureH / 2 + 40
+            : CANVAS_H / 2 - PHONE_H / 2 + 80,
+          left: isLaptop
+            ? CANVAS_W / 2 - (apertureW + 28) / 2
+            : CANVAS_W / 2 - PHONE_W / 2,
+          width: isLaptop ? apertureW + 28 : PHONE_W,
+          height: isLaptop ? apertureH + 28 : PHONE_H,
           display: "flex",
           opacity: phoneEnterOpacity,
           transform: phoneTransform,
           transformOrigin: "center center",
         }}
       >
-        <Phone
-          shotDataUrl={shotDataUrl}
+        <Device
+          mockup={mockup}
+          shotDataUrl={currentFrameSrc}
           imgHeight={imgDisplayHeight}
           scrollY={screenshotY}
+          walkMode={useWalk}
+          apertureW={apertureW}
+          apertureH={apertureH}
           taps={taps}
         />
       </div>
