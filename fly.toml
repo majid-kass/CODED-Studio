@@ -1,0 +1,33 @@
+# Fly.io app config. Run `fly launch --no-deploy` once to create the app, then
+# `fly secrets set` to add the env vars (see below), then `fly deploy` to push.
+#
+# Required secrets (set via `fly secrets set KEY=value`):
+#   ANTHROPIC_API_KEY
+#   NEXT_PUBLIC_SUPABASE_URL
+#   NEXT_PUBLIC_SUPABASE_ANON_KEY
+#
+# The Dockerfile installs chromium + Playwright deps for the walkthrough +
+# Remotion render. Sized at 512MB to fit the free allowance comfortably; bump
+# to 1GB if the Reel render OOMs.
+
+app = "coded-showcase"
+primary_region = "fra"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "3000"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512
