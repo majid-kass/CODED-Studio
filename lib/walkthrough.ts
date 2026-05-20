@@ -1,32 +1,16 @@
 // Playwright-driven walkthrough capture. Visits the project URL in a headless
 // browser, then navigates into up to N additional same-origin pages and
-// screenshots each one. The result is a sequence of viewport-sized PNGs the
-// Reel can cut between to show an actual click-through of the app instead of
-// scrolling a single landing-page screenshot.
-//
-// Cached on disk per (id, viewport, frame index). Long-lived — when the admin
-// hits Generate the warm step calls /api/walkthrough first, then the render
-// route reads from cache.
+// screenshots each one. Frames are persisted to Supabase Storage so they
+// survive deploys and are reachable from any worker.
 
-import { promises as fs } from "fs";
-import path from "path";
 import type { Browser } from "playwright";
 import { chromium } from "playwright";
 import type { Viewport } from "./screenshot";
+import { readObject, writeObject, walkFrameKey } from "./storage";
 
-const SHOTS_DIR = path.join(process.cwd(), "data", "screenshots");
 const MAX_FRAMES = 5;
 
 export type WalkthroughViewport = Viewport;
-
-export function walkthroughFramePath(
-  id: string,
-  viewport: WalkthroughViewport,
-  index: number,
-) {
-  const vp = viewport === "desktop" ? "desktop" : "mobile";
-  return path.join(SHOTS_DIR, `${id}-walk-${vp}-${index}.png`);
-}
 
 export async function readWalkthroughFrames(
   id: string,
@@ -34,12 +18,9 @@ export async function readWalkthroughFrames(
 ): Promise<Buffer[]> {
   const frames: Buffer[] = [];
   for (let i = 0; i < MAX_FRAMES; i++) {
-    try {
-      const buf = await fs.readFile(walkthroughFramePath(id, viewport, i));
-      frames.push(buf);
-    } catch {
-      break;
-    }
+    const buf = await readObject(walkFrameKey(id, viewport, i));
+    if (!buf) break;
+    frames.push(buf);
   }
   return frames;
 }
@@ -55,8 +36,6 @@ export async function captureWalkthrough(
   targetUrl: string,
   viewport: WalkthroughViewport,
 ): Promise<Buffer[]> {
-  await fs.mkdir(SHOTS_DIR, { recursive: true });
-
   const isMobile = viewport !== "desktop";
   const v = isMobile
     ? { width: 390, height: 844, deviceScaleFactor: 2 }
@@ -118,10 +97,10 @@ export async function captureWalkthrough(
       }
     }
 
-    // Persist to disk for the render route to pick up.
+    // Persist to Supabase Storage so render routes can pick them up.
     await Promise.all(
       frames.map((buf, i) =>
-        fs.writeFile(walkthroughFramePath(id, viewport, i), buf),
+        writeObject(walkFrameKey(id, viewport, i), buf),
       ),
     );
 

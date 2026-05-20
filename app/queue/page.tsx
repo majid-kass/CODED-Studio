@@ -3,7 +3,8 @@ import { listSubmissions } from "@/lib/store";
 import { SubmissionCard } from "@/components/SubmissionCard";
 import { SignOutButton } from "@/components/SignOutButton";
 import { CodedLogo } from "@/components/CodedLogo";
-import { readCachedShot, screenshotUrl } from "@/lib/screenshot";
+import { screenshotUrl } from "@/lib/screenshot";
+import { objectExists, shotKey } from "@/lib/storage";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -14,13 +15,13 @@ export default async function QueuePage() {
   const supabase = await supabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   const submissions = await listSubmissions();
-  // Decide which cards already have a screenshot cached so the UI knows whether
-  // to show a "pending" placeholder vs the phone-mockup preview. Generate
-  // action will trigger Microlink on demand for the rest.
+  // Cheaper "does it exist?" probe via Storage list() — we don't need to
+  // download the bytes here, just whether a cached PNG already lives at
+  // shots/{id}-mobile.png. The render routes do the real read on demand.
   const cards = await Promise.all(
     submissions.map(async (s) => ({
       submission: s,
-      hasScreenshot: (await readCachedShot(s.id)) !== null,
+      hasScreenshot: await objectExists(shotKey(s.id, "mobile")),
     }))
   );
 

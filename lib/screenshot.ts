@@ -1,5 +1,4 @@
-import { promises as fs } from "fs";
-import path from "path";
+import { readObject, writeObject, shotKey } from "./storage";
 
 export type Viewport = "mobile" | "desktop";
 
@@ -43,28 +42,20 @@ export function microlinkUrl(
   return `https://api.microlink.io/?${params.toString()}`;
 }
 
-export const SHOTS_DIR = path.join(process.cwd(), "data", "screenshots");
-
-// Cache key includes viewport so the laptop mockup's desktop capture doesn't
-// collide with the phone mockup's mobile capture.
-export function shotFilePath(id: string, viewport: Viewport = "mobile") {
-  const suffix = viewport === "desktop" ? "-desktop" : "";
-  return path.join(SHOTS_DIR, `${id}${suffix}.png`);
-}
-
-export async function readCachedShot(id: string, viewport: Viewport = "mobile") {
-  try {
-    return await fs.readFile(shotFilePath(id, viewport));
-  } catch {
-    return null;
-  }
+// readCachedShot / writeCachedShot now delegate to Supabase Storage. The
+// function signatures stay the same so callers (the render routes, the
+// screenshot endpoint) don't have to change.
+export async function readCachedShot(
+  id: string,
+  viewport: Viewport = "mobile",
+): Promise<Buffer | null> {
+  return readObject(shotKey(id, viewport));
 }
 
 export async function writeCachedShot(
   id: string,
   buf: Buffer,
   viewport: Viewport = "mobile",
-) {
-  await fs.mkdir(SHOTS_DIR, { recursive: true });
-  await fs.writeFile(shotFilePath(id, viewport), buf);
+): Promise<void> {
+  await writeObject(shotKey(id, viewport), buf);
 }
