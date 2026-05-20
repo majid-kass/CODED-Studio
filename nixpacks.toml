@@ -1,0 +1,41 @@
+# Railway / Nixpacks build config. Adds Chromium and the system libraries
+# Playwright needs to launch a real headless browser for /api/walkthrough.
+# Without these, Playwright's bundled chromium-headless-shell binary fails
+# to link at runtime ("libnss3.so: cannot open shared object file…").
+
+[phases.setup]
+nixPkgs = ["nodejs_20"]
+aptPkgs = [
+  "chromium",
+  "libnss3",
+  "libatk-bridge2.0-0",
+  "libatk1.0-0",
+  "libdrm2",
+  "libxkbcommon0",
+  "libxcomposite1",
+  "libxdamage1",
+  "libxrandr2",
+  "libgbm1",
+  "libxss1",
+  "libasound2",
+  "libpango-1.0-0",
+  "libpangocairo-1.0-0",
+  "libcairo2",
+  "libcups2",
+  "libnspr4",
+  "fonts-liberation",
+  "fonts-noto-color-emoji",
+]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+# Download the matching Playwright chromium build before bundling.
+cmds = [
+  "npx playwright install chromium",
+  "npm run build",
+]
+
+[start]
+cmd = "npm run start"

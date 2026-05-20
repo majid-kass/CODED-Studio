@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { CodedLogo } from "@/components/CodedLogo";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -49,14 +49,7 @@ export default function SignUpPage() {
     <main className="min-h-screen flex flex-col">
       <header className="px-6 sm:px-8 py-5">
         <Link href="/">
-          <Image
-            src="/brand/coded-logo-white.png"
-            alt="CODED"
-            width={90}
-            height={32}
-            style={{ height: "auto" }}
-            priority
-          />
+          <CodedLogo width={90} />
         </Link>
       </header>
       <section className="flex-1 flex items-center justify-center px-6 py-12">
