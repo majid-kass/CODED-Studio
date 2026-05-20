@@ -1,14 +1,19 @@
 import { NextResponse } from "next/server";
-import { microlinkUrl, readCachedShot, writeCachedShot } from "@/lib/screenshot";
+import {
+  microlinkUrl,
+  readCachedShot,
+  writeCachedShot,
+  type Viewport,
+} from "@/lib/screenshot";
 import { listSubmissions } from "@/lib/store";
 
 export const runtime = "nodejs";
 
-// Microlink can return 429 (rate limit) or 5xx (worker recycle) intermittently
-// on the free tier. Retry once after a short backoff before giving up so the
-// admin doesn't have to click Generate twice for a transient blip.
-async function fetchMicrolinkWithRetry(target: string): Promise<Buffer> {
-  const url = microlinkUrl(target, { fullPage: true });
+async function fetchMicrolinkWithRetry(
+  target: string,
+  viewport: Viewport,
+): Promise<Buffer> {
+  const url = microlinkUrl(target, { fullPage: true, viewport });
   for (let attempt = 0; attempt < 2; attempt++) {
     const res = await fetch(url, { signal: AbortSignal.timeout(45_000) });
     if (res.ok) return Buffer.from(await res.arrayBuffer());
@@ -25,10 +30,11 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
   const url = searchParams.get("url");
+  const viewportRaw = searchParams.get("viewport");
+  const viewport: Viewport = viewportRaw === "desktop" ? "desktop" : "mobile";
 
-  // Cached lookup by submission id.
   if (id) {
-    const cached = await readCachedShot(id);
+    const cached = await readCachedShot(id, viewport);
     if (cached) {
       return new NextResponse(new Uint8Array(cached), {
         headers: {
@@ -37,13 +43,12 @@ export async function GET(req: Request) {
         },
       });
     }
-    // Fall back: if the submission exists but the file is missing, fetch it.
     const all = await listSubmissions();
     const s = all.find((x) => x.id === id);
     if (!s) return new NextResponse("Not found", { status: 404 });
     try {
-      const buf = await fetchMicrolinkWithRetry(s.url);
-      await writeCachedShot(id, buf);
+      const buf = await fetchMicrolinkWithRetry(s.url, viewport);
+      await writeCachedShot(id, buf, viewport);
       return new NextResponse(new Uint8Array(buf), {
         headers: {
           "Content-Type": "image/png",
@@ -56,10 +61,9 @@ export async function GET(req: Request) {
     }
   }
 
-  // Ad-hoc capture by URL (no caching — used for ephemeral preview).
   if (url) {
     try {
-      const buf = await fetchMicrolinkWithRetry(url);
+      const buf = await fetchMicrolinkWithRetry(url, viewport);
       return new NextResponse(new Uint8Array(buf), {
         headers: {
           "Content-Type": "image/png",

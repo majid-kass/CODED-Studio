@@ -4,7 +4,12 @@ import path from "path";
 import sharp from "sharp";
 import JSZip from "jszip";
 import { listSubmissions } from "@/lib/store";
-import { microlinkUrl, readCachedShot, writeCachedShot } from "@/lib/screenshot";
+import {
+  microlinkUrl,
+  readCachedShot,
+  writeCachedShot,
+  type Viewport,
+} from "@/lib/screenshot";
 import {
   brandBg,
   getSegment,
@@ -12,6 +17,11 @@ import {
   type SegmentPalette,
   type SegmentKey,
 } from "@/lib/brandTheme";
+import {
+  parseRenderOptions,
+  applyThemeOverride,
+  type MockupChoice,
+} from "@/lib/renderOptions";
 import { SegmentLogo } from "@/components/SegmentLogo";
 
 export const runtime = "nodejs";
@@ -30,28 +40,33 @@ function bufferToDataUrl(buf: Buffer, mime = "image/png") {
   return `data:${mime};base64,${buf.toString("base64")}`;
 }
 
-async function getOrFetchShot(id: string, url: string): Promise<Buffer> {
-  const cached = await readCachedShot(id);
+async function getOrFetchShot(
+  id: string,
+  url: string,
+  viewport: Viewport,
+): Promise<Buffer> {
+  const cached = await readCachedShot(id, viewport);
   if (cached) return cached;
-  const res = await fetch(microlinkUrl(url, { fullPage: true }), {
+  const res = await fetch(microlinkUrl(url, { fullPage: true, viewport }), {
     signal: AbortSignal.timeout(45_000),
   });
   if (!res.ok) throw new Error(`Screenshot fetch failed: ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
-  await writeCachedShot(id, buf);
+  await writeCachedShot(id, buf, viewport);
   return buf;
 }
 
-// Crop a vertical phone-aspect window from the full-page screenshot.
+// Crop a window from the full-page screenshot at the requested scroll position
+// and aspect ratio (phone tall vs laptop wide).
 async function cropAtScroll(
   shotBuf: Buffer,
   scrollT: number,
   shotW: number,
   shotH: number,
+  aspect: number,
 ) {
-  const cropAspect = 9 / 19.5;
   const cropW = shotW;
-  const cropH = Math.min(shotH, Math.round(shotW / cropAspect));
+  const cropH = Math.min(shotH, Math.round(shotW / aspect));
   const maxTop = Math.max(0, shotH - cropH);
   const top = Math.round(maxTop * Math.max(0, Math.min(1, scrollT)));
   const buf = await sharp(shotBuf)
@@ -61,12 +76,16 @@ async function cropAtScroll(
   return bufferToDataUrl(buf);
 }
 
+const PHONE_ASPECT = 9 / 19.5;   // 0.462 — portrait
+const LAPTOP_ASPECT = 16 / 10;   // 1.60  — landscape
+
 // Reused tokens for every slide.
 type Ctx = {
   bg: BgTreatment;
   seg: SegmentPalette;
   segmentKey: SegmentKey;
   aiLockup?: string;
+  mockup: MockupChoice;
 };
 
 // ─── Frame layer used by every slide ─────────────────────────────────────────
@@ -210,6 +229,113 @@ function CornerBracket({
 }
 
 // Reusable phone mockup with rim glow, drop shadow, and content-fit screenshot.
+function Mockup(props: {
+  shot: string;
+  width: number;
+  glow: string;
+  mockup: MockupChoice;
+  objectPosition?: "top" | "center" | "bottom";
+}) {
+  if (props.mockup === "laptop") return <Laptop {...props} />;
+  return <Phone {...props} />;
+}
+
+function Laptop({
+  shot,
+  width,
+  glow,
+  objectPosition = "top",
+}: {
+  shot: string;
+  width: number;
+  glow: string;
+  objectPosition?: "top" | "center" | "bottom";
+}) {
+  const screenH = Math.round(width / LAPTOP_ASPECT);
+  const bezel = Math.max(8, Math.round(width * 0.015));
+  const innerW = width - bezel * 2;
+  const innerH = screenH - bezel * 2;
+  const hingeH = Math.round(width * 0.025);
+  const baseW = Math.round(width * 1.07);
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        width: baseW,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          position: "relative",
+          width,
+          height: screenH,
+          backgroundColor: "#0a0a0a",
+          borderRadius: 18,
+          padding: bezel,
+          boxShadow: `0 30px 80px rgba(0,0,0,0.6), 0 0 60px ${glow}55`,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            position: "relative",
+            width: innerW,
+            height: innerH,
+            borderRadius: 8,
+            overflow: "hidden",
+            backgroundColor: "#FFFFFF",
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={shot}
+            alt=""
+            width={innerW}
+            height={innerH}
+            style={{
+              display: "block",
+              width: innerW,
+              height: innerH,
+              objectFit: "cover",
+              objectPosition,
+              borderRadius: 8,
+            }}
+          />
+          {/* Camera dot */}
+          <div
+            style={{
+              position: "absolute",
+              top: 6,
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: 6,
+              height: 6,
+              backgroundColor: "rgba(255,255,255,0.5)",
+              borderRadius: 999,
+              display: "flex",
+            }}
+          />
+        </div>
+      </div>
+      {/* Hinge / base suggestion */}
+      <div
+        style={{
+          display: "flex",
+          width: baseW,
+          height: hingeH,
+          marginTop: 2,
+          backgroundImage:
+            "linear-gradient(to bottom, #1a1a1a 0%, #2a2a2a 40%, #0a0a0a 100%)",
+          borderRadius: `0 0 ${hingeH}px ${hingeH}px`,
+        }}
+      />
+    </div>
+  );
+}
+
 function Phone({
   shot,
   width,
@@ -224,7 +350,9 @@ function Phone({
   const height = Math.round(width * (19.5 / 9));
   const inset = Math.max(8, Math.round(width * 0.028));
   const radius = Math.round(width * 0.18);
-  const inner = Math.round(radius - inset / 2);
+  const innerW = width - inset * 2;
+  const innerH = height - inset * 2;
+  const inner = Math.round(radius - inset);
   return (
     <div
       style={{
@@ -242,27 +370,32 @@ function Phone({
         style={{
           position: "relative",
           display: "flex",
-          flex: 1,
+          width: innerW,
+          height: innerH,
           borderRadius: inner,
           overflow: "hidden",
           backgroundColor: "#FFFFFF",
         }}
       >
+        {/* Image radius is applied DIRECTLY in addition to the parent's
+            overflow:hidden — Satori sometimes drops the parent clip on
+            replaced elements, so anchoring the rounded corners on the
+            <img> itself keeps the bezel clean either way. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={shot}
           alt=""
-          width={width - inset * 2}
-          height={height - inset * 2}
+          width={innerW}
+          height={innerH}
           style={{
             display: "block",
-            width: "100%",
-            height: "100%",
+            width: innerW,
+            height: innerH,
             objectFit: "cover",
             objectPosition,
+            borderRadius: inner,
           }}
         />
-        {/* Dynamic island */}
         <div
           style={{
             position: "absolute",
@@ -276,15 +409,13 @@ function Phone({
             display: "flex",
           }}
         />
-        {/* Soft bottom fade — lets the screenshot melt into the bezel instead
-            of hard-cutting whatever happens to be at the crop boundary. */}
         <div
           style={{
             position: "absolute",
             left: 0,
             right: 0,
             bottom: 0,
-            height: height * 0.18,
+            height: innerH * 0.18,
             display: "flex",
             backgroundImage:
               "linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.45) 100%)",
@@ -305,7 +436,8 @@ function SlideCover({
   headline: string;
   shot: string;
 }) {
-  const { seg, bg } = ctx;
+  const { seg, bg, mockup } = ctx;
+  const isLaptop = mockup === "laptop";
   return (
     <SlideFrame ctx={ctx} slideNum={1}>
       <div
@@ -355,7 +487,13 @@ function SlideCover({
             marginTop: 8,
           }}
         >
-          <Phone shot={shot} width={420} glow={seg.accent} objectPosition="top" />
+          <Mockup
+            shot={shot}
+            width={isLaptop ? 820 : 420}
+            glow={seg.accent}
+            mockup={mockup}
+            objectPosition="top"
+          />
         </div>
       </div>
     </SlideFrame>
@@ -439,28 +577,23 @@ function SlideMeet({
 function SlideAction({
   ctx,
   shot,
-  caption,
+  features,
   eyebrow,
   slideNum,
   objectPosition,
 }: {
   ctx: Ctx;
   shot: string;
-  caption: string;
+  features: string[];
   eyebrow: string;
   slideNum: number;
   objectPosition: "top" | "center" | "bottom";
 }) {
-  const { seg, bg } = ctx;
-  // Pull up to three short feature lines from the caption (newline-split or
-  // sentence-split). Caps each at ~48 chars so they fit the layout.
-  const parts = caption
-    .split(/\n+/)
-    .flatMap((line) => line.split(/(?<=[.!?])\s+/))
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .slice(0, 3)
-    .map((s) => (s.length > 56 ? s.slice(0, 53) + "…" : s));
+  const { seg, bg, mockup } = ctx;
+  const isLaptop = mockup === "laptop";
+  // Slides 3 and 4 each get up to 3 features. Slide 3 takes the first three;
+  // slide 4 takes the remainder + any wrap-around so neither slide is empty.
+  const parts = features.length > 0 ? features.slice(0, 3) : ["Live", "Fast", "Built for the web"];
   return (
     <SlideFrame ctx={ctx} slideNum={slideNum}>
       <div
@@ -527,7 +660,13 @@ function SlideAction({
           ))}
         </div>
         <div style={{ display: "flex", flexShrink: 0 }}>
-          <Phone shot={shot} width={360} glow={seg.accent} objectPosition={objectPosition} />
+          <Mockup
+            shot={shot}
+            width={isLaptop ? 520 : 360}
+            glow={seg.accent}
+            mockup={mockup}
+            objectPosition={objectPosition}
+          />
         </div>
       </div>
     </SlideFrame>
@@ -620,7 +759,7 @@ function SlideCTA({
 }
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
@@ -629,25 +768,27 @@ export async function GET(
   if (!s) return new Response("Not found", { status: 404 });
 
   try {
-    const seg = getSegment(s.segment);
-    const bg = brandBg(seg);
+    const { themeOverride, mockup } = parseRenderOptions(req);
+    const viewport: Viewport = mockup === "laptop" ? "desktop" : "mobile";
+    const cropAspect = mockup === "laptop" ? LAPTOP_ASPECT : PHONE_ASPECT;
 
-    // Pre-bake the AI App Developer lockup PNG as a data URL so Satori can
-    // embed it directly. Cheap (~30 KB) and only matters for this segment.
+    const seg = getSegment(s.segment);
+    const bg = applyThemeOverride(brandBg(seg), themeOverride);
+
     const aiLockup =
       seg.key === "ai-app-developer"
         ? await fileDataUrl("brand/ai-app-developer-white.png", "image/png")
         : undefined;
 
-    const shotBuf = await getOrFetchShot(id, s.url);
+    const shotBuf = await getOrFetchShot(id, s.url, viewport);
     const meta = await sharp(shotBuf).metadata();
-    const shotW = meta.width ?? 780;
-    const shotH = meta.height ?? 1688;
+    const shotW = meta.width ?? (viewport === "desktop" ? 1440 : 780);
+    const shotH = meta.height ?? (viewport === "desktop" ? 2400 : 1688);
 
     const [heroShot, midShot, bottomShot] = await Promise.all([
-      cropAtScroll(shotBuf, 0.0, shotW, shotH),
-      cropAtScroll(shotBuf, 0.4, shotW, shotH),
-      cropAtScroll(shotBuf, 0.85, shotW, shotH),
+      cropAtScroll(shotBuf, 0.0, shotW, shotH, cropAspect),
+      cropAtScroll(shotBuf, 0.4, shotW, shotH, cropAspect),
+      cropAtScroll(shotBuf, 0.85, shotW, shotH, cropAspect),
     ]);
 
     const pitchLine = s.pitch.length > 140 ? s.pitch.slice(0, 137) + "…" : s.pitch;
@@ -657,7 +798,12 @@ export async function GET(
       seg,
       segmentKey: seg.key,
       aiLockup,
+      mockup,
     };
+
+    const features = s.features ?? [];
+    const slidesA = features.slice(0, 3);
+    const slidesB = features.length > 3 ? features.slice(3) : features.slice(0, 3);
 
     const slides = [
       <SlideCover key="1" ctx={ctx} headline={s.headline} shot={heroShot} />,
@@ -666,8 +812,8 @@ export async function GET(
         key="3"
         ctx={ctx}
         shot={midShot}
-        caption={s.caption}
-        eyebrow="In action"
+        features={slidesA}
+        eyebrow="What it does"
         slideNum={3}
         objectPosition="top"
       />,
@@ -675,8 +821,8 @@ export async function GET(
         key="4"
         ctx={ctx}
         shot={bottomShot}
-        caption={s.caption}
-        eyebrow="And more"
+        features={slidesB}
+        eyebrow="Built for you"
         slideNum={4}
         objectPosition="bottom"
       />,

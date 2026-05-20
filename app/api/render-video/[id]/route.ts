@@ -126,6 +126,7 @@ export async function GET(
       theme: bg.theme,
       textColor: bg.text,
       textDimColor: bg.textDim,
+      features: s.features ?? [],
     };
 
     const composition = await selectComposition({

@@ -6,6 +6,10 @@ export type MarketingCopy = {
   headline: string;
   caption: string;
   hashtags: string[];
+  /** 3–5 short, product-focused feature bullets used by the Reel pop-ups
+      and carousel callouts. Each bullet describes what the APP does, not
+      what the bootcamp does. */
+  features: string[];
   language: "en" | "ar";
 };
 
@@ -103,8 +107,14 @@ export async function generateMarketingCopy(input: {
               items: { type: "string" },
               description: "6–9 hashtags, each starting with #.",
             },
+            features: {
+              type: "array",
+              items: { type: "string" },
+              description:
+                "4 short feature bullets describing WHAT THE PRODUCT DOES (not the bootcamp). Each 2–5 words, action-oriented, headline-cased. Examples: 'Live availability', 'Instant booking', 'AI scheduling', 'Bilingual UI'. Never mention CODED, the bootcamp, AI training, or how it was built — only what the user gets.",
+            },
           },
-          required: ["headline", "caption", "hashtags"],
+          required: ["headline", "caption", "hashtags", "features"],
         },
       },
     ],
@@ -120,9 +130,9 @@ export async function generateMarketingCopy(input: {
     headline: string;
     caption: string;
     hashtags: string[];
+    features?: string[];
   };
 
-  // Normalize: ensure each hashtag starts with #
   const hashtags = out.hashtags.map((h) =>
     h.trim().startsWith("#") ? h.trim() : `#${h.trim()}`
   );
@@ -130,10 +140,22 @@ export async function generateMarketingCopy(input: {
   // Safety net: if Claude returned literal "\n" as text instead of real newlines, fix it.
   const caption = out.caption.trim().replace(/\\n/g, "\n");
 
+  // Normalize features: trim, cap at 4 entries, cap each at ~30 chars so
+  // they fit the pill / badge layouts in the Reel without truncating
+  // awkwardly. Drop anything that mentions the bootcamp / AI training /
+  // CODED brand — those are not app features.
+  const blocklist = /\b(bootcamp|coded|trained|built with ai|made with ai)\b/i;
+  const features = (out.features ?? [])
+    .map((f) => f.trim())
+    .filter((f) => f.length > 0 && !blocklist.test(f))
+    .map((f) => (f.length > 30 ? f.slice(0, 28).trimEnd() + "…" : f))
+    .slice(0, 4);
+
   return {
     headline: out.headline.trim(),
     caption,
     hashtags,
+    features,
     language,
   };
 }

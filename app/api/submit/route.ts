@@ -47,6 +47,7 @@ export async function POST(req: Request) {
     bullets: [],
     caption: copy.caption,
     hashtags: copy.hashtags,
+    features: copy.features,
     language: copy.language,
     segment,
   });

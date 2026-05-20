@@ -34,6 +34,7 @@ export const Root = () => {
           theme: "dark" as const,
           textColor: "#FFFFFF",
           textDimColor: "rgba(255,255,255,0.75)",
+          features: ["Live availability", "Instant booking", "AI scheduling", "Bilingual UI"],
         }}
       />
     </>

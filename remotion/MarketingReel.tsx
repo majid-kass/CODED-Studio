@@ -30,6 +30,10 @@ export const marketingReelSchema = z.object({
   theme: z.enum(["light", "dark"]),
   textColor: z.string(),
   textDimColor: z.string(),
+  /** Short app-feature bullets ("Live availability", "Instant booking", …).
+      Used in scene 3 pill badges + scene 5 infographic so the Reel reads as
+      an ad for THIS app, not for the bootcamp. */
+  features: z.array(z.string()),
 });
 
 const CANVAS_W = 1080;
@@ -197,18 +201,30 @@ const StatBadge: React.FC<{
         {glyph}
       </div>
       <div style={{ display: "flex", flexDirection: "column" }}>
-        <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1 }}>{value}</div>
         <div
           style={{
-            fontSize: 14,
-            letterSpacing: 3,
-            textTransform: "uppercase",
-            color: "#14243F99",
-            marginTop: 4,
+            fontSize: label ? 28 : 30,
+            fontWeight: 800,
+            lineHeight: 1,
+            display: "flex",
           }}
         >
-          {label}
+          {value}
         </div>
+        {label && (
+          <div
+            style={{
+              fontSize: 14,
+              letterSpacing: 3,
+              textTransform: "uppercase",
+              color: "#14243F99",
+              marginTop: 4,
+              display: "flex",
+            }}
+          >
+            {label}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -393,6 +409,7 @@ export const MarketingReel: React.FC<
   segAccent,
   textColor,
   textDimColor,
+  features,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -635,59 +652,42 @@ export const MarketingReel: React.FC<
       <FloatingIcon glyph="✦" x={840} y={680} size={56} start={SCENES.upright[0] + 20} duration={90} color="#FFFFFF" drift={{ dx: 40, dy: -40 }} />
       <FloatingIcon glyph="★" x={200} y={1100} size={48} start={SCENES.upright[0] + 50} duration={90} color={segAccent} drift={{ dx: -30, dy: 20 }} />
 
-      {/* ── Stat badges fly in around the tilted phone (scene 3) ────────── */}
-      <StatBadge
-        glyph="AI"
-        value="100%"
-        label="AI-built"
-        x={140}
-        y={420}
-        start={SCENES.sideways[0] + 25}
-        duration={120}
-        accent={segAccent}
-      />
-      <StatBadge
-        glyph="⚡"
-        value="Live"
-        label="On the web"
-        x={680}
-        y={580}
-        start={SCENES.sideways[0] + 55}
-        duration={100}
-        accent={segAccent}
-      />
-      <StatBadge
-        glyph="✓"
-        value="EN / AR"
-        label="Bilingual copy"
-        x={120}
-        y={1280}
-        start={SCENES.sideways[0] + 85}
-        duration={90}
-        accent={segAccent}
-      />
-
-      {/* ── Scene 4 — segment badge on left of upright phone ────────────── */}
-      <StatBadge
-        glyph="✦"
-        value={segmentLabel}
-        label="CODED program"
-        x={100}
-        y={780}
-        start={SCENES.upright[0] + 30}
-        duration={130}
-        accent={segAccent}
-      />
-      <StatBadge
-        glyph="→"
-        value="Shipped"
-        label="Built with Claude"
-        x={620}
-        y={1280}
-        start={SCENES.upright[0] + 70}
-        duration={110}
-        accent={segAccent}
-      />
+      {/* ── Feature pill badges (scenes 3 + 4) ───────────────────────────
+          Each pill quotes an actual product feature emitted by Claude, so the
+          Reel sells THE APP — not the bootcamp. We render up to 5 pills
+          across the two scenes; the data drives content + glyphs. */}
+      {(() => {
+        const slots: {
+          x: number;
+          y: number;
+          start: number;
+          duration: number;
+          glyph: string;
+        }[] = [
+          { x: 140, y: 420,  start: SCENES.sideways[0] + 25, duration: 120, glyph: "✦" },
+          { x: 680, y: 580,  start: SCENES.sideways[0] + 55, duration: 100, glyph: "⚡" },
+          { x: 120, y: 1280, start: SCENES.sideways[0] + 85, duration: 90,  glyph: "★" },
+          { x: 100, y: 780,  start: SCENES.upright[0]  + 30, duration: 130, glyph: "◆" },
+          { x: 620, y: 1280, start: SCENES.upright[0]  + 70, duration: 110, glyph: "→" },
+        ];
+        return features.slice(0, slots.length).map((feature, i) => {
+          const slot = slots[i];
+          // Render the feature as a single-line label for visual rhythm.
+          return (
+            <StatBadge
+              key={i}
+              glyph={slot.glyph}
+              value={feature}
+              label=""
+              x={slot.x}
+              y={slot.y}
+              start={slot.start}
+              duration={slot.duration}
+              accent={segAccent}
+            />
+          );
+        });
+      })()}
 
       {/* ── Scene 5 — big infographic on the left side ──────────────────── */}
       <div
@@ -713,12 +713,22 @@ export const MarketingReel: React.FC<
             display: "flex",
           }}
         >
-          By the numbers
+          {`What it does`}
         </div>
-        <InfoStat glyph="0→1" label="Idea to live product" accent={segAccent} delay={0} infoFrame={frame - SCENES.infographic[0]} fps={fps} />
-        <InfoStat glyph="AI" label="Marketing copy, EN + AR" accent={segAccent} delay={10} infoFrame={frame - SCENES.infographic[0]} fps={fps} />
-        <InfoStat glyph="🇰🇼" label="Built in Kuwait" accent={segAccent} delay={20} infoFrame={frame - SCENES.infographic[0]} fps={fps} />
-        <InfoStat glyph="∞" label="Ready to scale" accent={segAccent} delay={30} infoFrame={frame - SCENES.infographic[0]} fps={fps} />
+        {features.slice(0, 4).map((f, i) => {
+          const glyphs = ["✦", "⚡", "★", "◆"];
+          return (
+            <InfoStat
+              key={i}
+              glyph={glyphs[i % glyphs.length]}
+              label={f}
+              accent={segAccent}
+              delay={i * 10}
+              infoFrame={frame - SCENES.infographic[0]}
+              fps={fps}
+            />
+          );
+        })}
       </div>
 
       {/* ── Scene 6 — CTA pill + URL ────────────────────────────────────── */}

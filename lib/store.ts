@@ -13,6 +13,8 @@ export type Submission = {
   bullets: string[];
   caption: string;
   hashtags: string[];
+  /** 3–4 short app-feature bullets (what the product does, not the bootcamp). */
+  features?: string[];
   language?: "en" | "ar";
   segment?: SegmentKey;
   /** Captured screenshot dimensions, populated lazily by the first render. */

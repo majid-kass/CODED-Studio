@@ -22,11 +22,13 @@ type Props = {
 };
 
 type FormatKey = "image" | "carousel" | "reel";
+type ThemeChoice = "auto" | "light" | "dark";
+type MockupChoice = "phone" | "laptop";
 
-const FORMATS: { key: FormatKey; label: string; endpoint: (id: string) => string; ext: string }[] = [
-  { key: "image", label: "Image", endpoint: (id) => `/api/render/${id}`, ext: "png" },
-  { key: "carousel", label: "Carousel", endpoint: (id) => `/api/render-carousel/${id}`, ext: "zip" },
-  { key: "reel", label: "Reel", endpoint: (id) => `/api/render-video/${id}`, ext: "mp4" },
+const FORMATS: { key: FormatKey; label: string; basePath: string; ext: string }[] = [
+  { key: "image", label: "Image", basePath: "/api/render", ext: "png" },
+  { key: "carousel", label: "Carousel", basePath: "/api/render-carousel", ext: "zip" },
+  { key: "reel", label: "Reel", basePath: "/api/render-video", ext: "mp4" },
 ];
 
 export function SubmissionCard({ submission, screenshotSrc, hasScreenshot }: Props) {
@@ -40,6 +42,8 @@ export function SubmissionCard({ submission, screenshotSrc, hasScreenshot }: Pro
     carousel: false,
     reel: false,
   });
+  const [theme, setTheme] = useState<ThemeChoice>("auto");
+  const [mockup, setMockup] = useState<MockupChoice>("phone");
   const [screenshotReady, setScreenshotReady] = useState(hasScreenshot);
   const [warming, setWarming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,10 +69,18 @@ export function SubmissionCard({ submission, screenshotSrc, hasScreenshot }: Pro
       : `${safeName || "post"}-coded.${ext}`;
   }
 
+  function endpointFor(fmt: typeof FORMATS[number]) {
+    const params = new URLSearchParams();
+    if (theme !== "auto") params.set("theme", theme);
+    if (mockup !== "phone") params.set("mockup", mockup);
+    const qs = params.toString();
+    return `${fmt.basePath}/${submission.id}${qs ? `?${qs}` : ""}`;
+  }
+
   async function downloadFormat(fmt: typeof FORMATS[number]) {
     setBusy((b) => ({ ...b, [fmt.key]: true }));
     try {
-      const res = await fetch(fmt.endpoint(submission.id));
+      const res = await fetch(endpointFor(fmt));
       if (!res.ok) {
         const text = await res.text();
         throw new Error(text || `${fmt.label} render failed (${res.status})`);
@@ -91,24 +103,26 @@ export function SubmissionCard({ submission, screenshotSrc, hasScreenshot }: Pro
 
     // Warm the screenshot cache first so the three renders below don't all
     // race to call Microlink in parallel.
-    if (!screenshotReady) {
-      setWarming(true);
-      try {
-        const res = await fetch(`/api/screenshot?id=${submission.id}`);
-        if (!res.ok) {
-          const detail = (await res.text().catch(() => "")).slice(0, 200);
-          throw new Error(
-            `Screenshot capture failed (${res.status})${detail ? ` — ${detail}` : ""}`
-          );
-        }
-        setScreenshotReady(true);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Screenshot capture failed");
-        setWarming(false);
-        return;
+    // Warm the right screenshot viewport. Laptop mockup needs a desktop
+    // capture; phone uses the mobile capture. Each viewport has its own
+    // cache key so they don't trample each other.
+    setWarming(true);
+    try {
+      const viewportQs = mockup === "laptop" ? "&viewport=desktop" : "";
+      const res = await fetch(`/api/screenshot?id=${submission.id}${viewportQs}`);
+      if (!res.ok) {
+        const detail = (await res.text().catch(() => "")).slice(0, 200);
+        throw new Error(
+          `Screenshot capture failed (${res.status})${detail ? ` — ${detail}` : ""}`
+        );
       }
+      setScreenshotReady(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Screenshot capture failed");
       setWarming(false);
+      return;
     }
+    setWarming(false);
 
     const todo = FORMATS.filter((f) => selected[f.key]);
     const results = await Promise.allSettled(todo.map(downloadFormat));
@@ -184,6 +198,30 @@ export function SubmissionCard({ submission, screenshotSrc, hasScreenshot }: Pro
               />
             ))}
           </div>
+
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <SegPicker
+              label="Theme"
+              value={theme}
+              disabled={anyBusy}
+              options={[
+                { value: "auto", label: "Auto" },
+                { value: "light", label: "Light" },
+                { value: "dark", label: "Dark" },
+              ]}
+              onChange={(v) => setTheme(v as ThemeChoice)}
+            />
+            <SegPicker
+              label="Mockup"
+              value={mockup}
+              disabled={anyBusy}
+              options={[
+                { value: "phone", label: "Phone" },
+                { value: "laptop", label: "Laptop" },
+              ]}
+              onChange={(v) => setMockup(v as MockupChoice)}
+            />
+          </div>
           <button
             onClick={handleGenerate}
             disabled={anyBusy || !anySelected}
@@ -236,6 +274,48 @@ function FormatCheckbox({
         {busy ? "…" : label}
       </span>
     </label>
+  );
+}
+
+function SegPicker({
+  label,
+  value,
+  disabled,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  disabled: boolean;
+  options: { value: string; label: string }[];
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div>
+      <p className="text-[9px] uppercase tracking-[0.2em] text-white/40 mb-1.5">
+        {label}
+      </p>
+      <div className="flex rounded-lg border border-white/10 overflow-hidden">
+        {options.map((o) => {
+          const active = o.value === value;
+          return (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => onChange(o.value)}
+              disabled={disabled}
+              className={`flex-1 px-1 py-2 text-[9px] uppercase tracking-[0.15em] font-bold transition ${
+                active
+                  ? "bg-white/[0.10] text-white"
+                  : "bg-transparent text-white/55 hover:text-white/85"
+              } ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
+            >
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
