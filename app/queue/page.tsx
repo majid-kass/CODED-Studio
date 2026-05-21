@@ -1,9 +1,10 @@
-import Image from "next/image";
 import Link from "next/link";
 import { listSubmissions } from "@/lib/store";
 import { SubmissionCard } from "@/components/SubmissionCard";
 import { SignOutButton } from "@/components/SignOutButton";
+import { CodedLogo } from "@/components/CodedLogo";
 import { screenshotUrl } from "@/lib/screenshot";
+import { objectExists, shotKey } from "@/lib/storage";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -14,19 +15,21 @@ export default async function QueuePage() {
   const supabase = await supabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   const submissions = await listSubmissions();
+  // Cheaper "does it exist?" probe via Storage list() — we don't need to
+  // download the bytes here, just whether a cached PNG already lives at
+  // shots/{id}-mobile.png. The render routes do the real read on demand.
+  const cards = await Promise.all(
+    submissions.map(async (s) => ({
+      submission: s,
+      hasScreenshot: await objectExists(shotKey(s.id, "mobile")),
+    }))
+  );
 
   return (
     <main className="min-h-screen">
       <header className="px-6 sm:px-8 py-5 flex items-center justify-between gap-4 border-b border-white/5">
         <Link href="/" className="flex items-center gap-3 min-w-0">
-          <Image
-            src="/brand/coded-logo-white.png"
-            alt="CODED"
-            width={90}
-            height={32}
-            style={{ height: "auto" }}
-            className="flex-shrink-0"
-          />
+          <CodedLogo width={90} />
           <span className="hidden sm:inline text-[10px] uppercase tracking-[0.25em] text-white/40 whitespace-nowrap">
             Marketing queue
           </span>
@@ -52,11 +55,12 @@ export default async function QueuePage() {
           <EmptyState />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 max-w-7xl mx-auto">
-            {submissions.map((s) => (
+            {cards.map(({ submission: s, hasScreenshot }) => (
               <SubmissionCard
                 key={s.id}
                 submission={s}
                 screenshotSrc={screenshotUrl(s.url, s.id)}
+                hasScreenshot={hasScreenshot}
               />
             ))}
           </div>

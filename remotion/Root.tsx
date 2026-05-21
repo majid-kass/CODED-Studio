@@ -20,12 +20,23 @@ export const Root = () => {
         defaultProps={{
           headline: "A Booking Platform For A Rooftop",
           projectName: "Loft 5",
-          logoDataUrl: "",
+          segmentKey: "ai-app-developer",
+          segmentLabel: "AI App Developer",
+          aiLockup: "",
           shotDataUrl: "",
           shotWidth: 780,
           shotHeight: 1688,
           bgBase: "#14243F",
           bgAccent: "#26456a",
+          bgGradient: "radial-gradient(circle at 50% 60%, rgba(0,185,180,0.4) 0%, #026678 50%, #0a1326 100%)",
+          bgOverlay: "",
+          segAccent: "#16D7D1",
+          theme: "dark" as const,
+          textColor: "#FFFFFF",
+          textDimColor: "rgba(255,255,255,0.75)",
+          features: ["Live availability", "Instant booking", "AI scheduling", "Bilingual UI"],
+          mockup: "phone" as const,
+          walkthroughFrames: [] as string[],
         }}
       />
     </>
