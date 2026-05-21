@@ -91,7 +91,13 @@ ENV PORT=3000
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
+# Remotion bundles its composition at runtime (inside renderMedia), so the
+# raw .ts/.tsx source files it imports must live in the container — not just
+# the .next compiled output. That means remotion/ AND the cross-package
+# imports it pulls in (components/, lib/) need to ship with it.
 COPY --from=builder /app/remotion ./remotion
+COPY --from=builder /app/components ./components
+COPY --from=builder /app/lib ./lib
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/next.config.ts ./next.config.ts
 COPY --from=builder /app/tailwind.config.ts ./tailwind.config.ts
