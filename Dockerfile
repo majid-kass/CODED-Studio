@@ -5,6 +5,16 @@
 # ── Build ────────────────────────────────────────────────────────────────
 FROM node:20-bookworm-slim AS builder
 
+# Next.js inlines NEXT_PUBLIC_* env vars into the client bundle at build time
+# (`next build`). They must be present as real env vars during that step or
+# the browser bundle ships with empty strings and supabaseBrowser() throws on
+# init. Railway (and any other Docker host) needs to receive them as build
+# args; declaring ARG + re-exposing as ENV is the canonical pattern.
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+
 WORKDIR /app
 
 # Install build-time deps (Playwright chromium dependencies are needed both
