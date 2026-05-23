@@ -114,7 +114,7 @@ export async function GET(
             ? `${bg.cssOverlay}, ${bg.cssGradient}`
             : bg.cssGradient,
           color: bg.text,
-          fontFamily: isArabic ? "Noto Sans Arabic, sans-serif" : "sans-serif",
+          fontFamily: isArabic ? "IBM Plex Sans Arabic, sans-serif" : "sans-serif",
           padding: "80px 80px",
           position: "relative",
           overflow: "hidden",

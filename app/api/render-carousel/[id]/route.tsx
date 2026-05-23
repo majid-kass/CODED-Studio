@@ -115,7 +115,7 @@ function SlideFrame({
           ? `${bg.cssOverlay}, ${bg.cssGradient}`
           : bg.cssGradient,
         color: bg.text,
-        fontFamily: isRtl ? "Noto Sans Arabic, sans-serif" : "sans-serif",
+        fontFamily: isRtl ? "IBM Plex Sans Arabic, sans-serif" : "sans-serif",
         padding: PAD,
         overflow: "hidden",
         direction: isRtl ? "rtl" : "ltr",

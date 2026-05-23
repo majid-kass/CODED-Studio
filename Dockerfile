@@ -23,6 +23,7 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     chromium \
+    fonts-ibm-plex \
     fonts-liberation \
     fonts-noto-core \
     fonts-noto-color-emoji \
@@ -63,6 +64,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     chromium \
+    fonts-ibm-plex \
     fonts-liberation \
     fonts-noto-core \
     fonts-noto-color-emoji \

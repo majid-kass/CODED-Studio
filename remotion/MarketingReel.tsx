@@ -706,8 +706,11 @@ export const MarketingReel: React.FC<
     <AbsoluteFill
       style={{
         backgroundColor: bgBase,
-        fontFamily: "sans-serif",
+        fontFamily: isRtl
+          ? "IBM Plex Sans Arabic, IBM Plex Sans, sans-serif"
+          : "IBM Plex Sans, sans-serif",
         color: textColor,
+        direction: isRtl ? "rtl" : "ltr",
       }}
     >
       <AbsoluteFill style={{ backgroundImage: bgGradient, opacity: glowPulse }} />
