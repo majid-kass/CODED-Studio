@@ -20,6 +20,7 @@ import {
 import {
   parseRenderOptions,
   applyThemeOverride,
+  resolveCopyForLang,
   type MockupChoice,
 } from "@/lib/renderOptions";
 import { SegmentLogo } from "@/components/SegmentLogo";
@@ -768,12 +769,13 @@ export async function GET(
   if (!s) return new Response("Not found", { status: 404 });
 
   try {
-    const { themeOverride, mockup } = parseRenderOptions(req);
+    const { themeOverride, mockup, lang } = parseRenderOptions(req);
     const viewport: Viewport = mockup === "laptop" ? "desktop" : "mobile";
     const cropAspect = mockup === "laptop" ? LAPTOP_ASPECT : PHONE_ASPECT;
 
     const seg = getSegment(s.segment);
     const bg = applyThemeOverride(brandBg(seg), themeOverride);
+    const copy = await resolveCopyForLang(s, lang);
 
     const aiLockup =
       seg.key === "ai-app-developer"
@@ -801,12 +803,12 @@ export async function GET(
       mockup,
     };
 
-    const features = s.features ?? [];
+    const features = copy.features;
     const slidesA = features.slice(0, 3);
     const slidesB = features.length > 3 ? features.slice(3) : features.slice(0, 3);
 
     const slides = [
-      <SlideCover key="1" ctx={ctx} headline={s.headline} shot={heroShot} />,
+      <SlideCover key="1" ctx={ctx} headline={copy.headline} shot={heroShot} />,
       <SlideMeet key="2" ctx={ctx} projectName={s.name} pitch={pitchLine} />,
       <SlideAction
         key="3"

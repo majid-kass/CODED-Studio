@@ -159,3 +159,68 @@ export async function generateMarketingCopy(input: {
     language,
   };
 }
+
+/**
+ * Translate marketing copy to the target language. Used when the admin
+ * picks "Arabic" in the generate panel for an English submission (or vice
+ * versa). Cached on the submission row so we only pay for the call once.
+ */
+export async function translateMarketingCopy(
+  copy: { headline: string; caption: string; features: string[] },
+  target: "en" | "ar",
+): Promise<{ headline: string; caption: string; features: string[] }> {
+  const systemMessage =
+    target === "ar"
+      ? `أنت مترجم تسويقي لشركة كوديد. ترجم محتوى تسويقي من الإنجليزية إلى العربية مع الحفاظ على نفس النبرة (واثقة، عصرية، تخاطب طموح المؤسّسين) والبنية. لا تترجم أسماء المنتجات أو العلامات التجارية. لا تضيف أي تعليق — فقط الترجمة عبر الأداة.`
+      : `You translate CODED marketing copy from Arabic to English. Preserve the confident, modern, founder-aspirational tone and the structure (short paragraphs, single emoji at most). Keep product / brand names untranslated. Use the tool — no preamble.`;
+
+  const response = await client.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 1024,
+    system: [
+      { type: "text", text: systemMessage, cache_control: { type: "ephemeral" } },
+    ],
+    tools: [
+      {
+        name: "submit_translation",
+        description: "Submit the translated copy.",
+        input_schema: {
+          type: "object",
+          properties: {
+            headline: { type: "string", description: "Translated headline." },
+            caption: { type: "string", description: "Translated caption, same paragraph structure." },
+            features: {
+              type: "array",
+              items: { type: "string" },
+              description: "Translated feature bullets, same count, same length budget.",
+            },
+          },
+          required: ["headline", "caption", "features"],
+        },
+      },
+    ],
+    tool_choice: { type: "tool", name: "submit_translation" },
+    messages: [
+      {
+        role: "user",
+        content:
+          `Headline: ${copy.headline}\n\nCaption:\n${copy.caption}\n\nFeatures:\n${copy.features.map((f) => `- ${f}`).join("\n")}`,
+      },
+    ],
+  });
+
+  const toolUse = response.content.find((c) => c.type === "tool_use");
+  if (!toolUse || toolUse.type !== "tool_use") {
+    throw new Error("Claude did not return a translation");
+  }
+  const out = toolUse.input as {
+    headline: string;
+    caption: string;
+    features: string[];
+  };
+  return {
+    headline: out.headline.trim(),
+    caption: out.caption.trim().replace(/\\n/g, "\n"),
+    features: out.features.map((f) => f.trim()).filter(Boolean),
+  };
+}

@@ -28,8 +28,10 @@ export async function POST(req: Request) {
   const segment: SegmentKey =
     segmentRaw in segments ? (segmentRaw as SegmentKey) : DEFAULT_SEGMENT;
   const consent = Boolean(body.consent);
+  const submitterName = String(body.submitterName ?? "").trim();
+  const submitterEmail = String(body.submitterEmail ?? "").trim();
 
-  if (!url || !name || !pitch || !consent) {
+  if (!url || !name || !pitch || !consent || !submitterName || !submitterEmail) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
 
@@ -50,6 +52,8 @@ export async function POST(req: Request) {
     features: copy.features,
     language: copy.language,
     segment,
+    submitterName,
+    submitterEmail,
   });
 
   return NextResponse.json({ ok: true, id, segment, language: copy.language });

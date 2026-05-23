@@ -13,6 +13,9 @@ type Submission = {
   caption: string;
   hashtags: string[];
   segment?: SegmentKey;
+  language?: "en" | "ar";
+  submitterName?: string;
+  submitterEmail?: string;
 };
 
 type Props = {
@@ -24,6 +27,7 @@ type Props = {
 type FormatKey = "image" | "carousel" | "reel";
 type ThemeChoice = "auto" | "light" | "dark";
 type MockupChoice = "phone" | "laptop";
+type LangChoice = "auto" | "en" | "ar";
 
 const FORMATS: { key: FormatKey; label: string; basePath: string; ext: string }[] = [
   { key: "image", label: "Image", basePath: "/api/render", ext: "png" },
@@ -44,6 +48,7 @@ export function SubmissionCard({ submission, screenshotSrc, hasScreenshot }: Pro
   });
   const [theme, setTheme] = useState<ThemeChoice>("auto");
   const [mockup, setMockup] = useState<MockupChoice>("phone");
+  const [langChoice, setLangChoice] = useState<LangChoice>("auto");
   const [screenshotReady, setScreenshotReady] = useState(hasScreenshot);
   const [warming, setWarming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +78,7 @@ export function SubmissionCard({ submission, screenshotSrc, hasScreenshot }: Pro
     const params = new URLSearchParams();
     if (theme !== "auto") params.set("theme", theme);
     if (mockup !== "phone") params.set("mockup", mockup);
+    if (langChoice !== "auto") params.set("lang", langChoice);
     const qs = params.toString();
     return `${fmt.basePath}/${submission.id}${qs ? `?${qs}` : ""}`;
   }
@@ -149,22 +155,39 @@ export function SubmissionCard({ submission, screenshotSrc, hasScreenshot }: Pro
   return (
     <article className="rounded-3xl bg-white/[0.03] border border-white/10 overflow-hidden">
       <div className="p-6 pb-0">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-bold">{submission.name}</h3>
+        <div className="flex items-start justify-between mb-3">
+          <div className="min-w-0">
+            <h3 className="text-lg font-bold truncate">{submission.name}</h3>
             <a
               href={submission.url}
               target="_blank"
               rel="noreferrer"
-              className="text-xs text-aiapp-aqua hover:underline"
+              className="text-xs text-aiapp-aqua hover:underline break-all"
             >
               {submission.url}
             </a>
           </div>
-          <span className="text-[10px] uppercase tracking-[0.2em] text-white/40">
+          <span className="text-[10px] uppercase tracking-[0.2em] text-white/40 ml-3 whitespace-nowrap">
             {date}
           </span>
         </div>
+        {(submission.submitterName || submission.submitterEmail) && (
+          <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-white/55">
+            {submission.submitterName && (
+              <span className="font-medium text-white/75">
+                {submission.submitterName}
+              </span>
+            )}
+            {submission.submitterEmail && (
+              <a
+                href={`mailto:${submission.submitterEmail}`}
+                className="hover:text-white transition"
+              >
+                {submission.submitterEmail}
+              </a>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="px-6">
@@ -189,9 +212,6 @@ export function SubmissionCard({ submission, screenshotSrc, hasScreenshot }: Pro
           </p>
           <p className="whitespace-pre-wrap text-sm text-white/85 leading-relaxed">
             {submission.caption}
-          </p>
-          <p className="text-sm text-aiapp-aqua mt-3">
-            {submission.hashtags.join(" ")}
           </p>
         </div>
 
@@ -235,6 +255,17 @@ export function SubmissionCard({ submission, screenshotSrc, hasScreenshot }: Pro
               onChange={(v) => setMockup(v as MockupChoice)}
             />
           </div>
+          <SegPicker
+            label="Language"
+            value={langChoice}
+            disabled={anyBusy}
+            options={[
+              { value: "auto", label: `Auto${submission.language ? ` (${submission.language.toUpperCase()})` : ""}` },
+              { value: "en", label: "English" },
+              { value: "ar", label: "العربية" },
+            ]}
+            onChange={(v) => setLangChoice(v as LangChoice)}
+          />
           <button
             onClick={handleGenerate}
             disabled={anyBusy || !anySelected}

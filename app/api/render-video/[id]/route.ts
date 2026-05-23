@@ -11,7 +11,7 @@ import {
 } from "@/lib/screenshot";
 import sharp from "sharp";
 import { brandBg, getSegment } from "@/lib/brandTheme";
-import { parseRenderOptions, applyThemeOverride } from "@/lib/renderOptions";
+import { parseRenderOptions, applyThemeOverride, resolveCopyForLang } from "@/lib/renderOptions";
 import { readWalkthroughFrames } from "@/lib/walkthrough";
 
 // Disable Webpack persistent disk cache so MarketingReel edits show up on
@@ -100,11 +100,12 @@ export async function GET(
   if (!s) return new Response("Not found", { status: 404 });
 
   try {
-    const { themeOverride, mockup } = parseRenderOptions(req);
+    const { themeOverride, mockup, lang } = parseRenderOptions(req);
     const viewport: Viewport = mockup === "laptop" ? "desktop" : "mobile";
 
     const seg = getSegment(s.segment);
     const bg = applyThemeOverride(brandBg(seg), themeOverride);
+    const copy = await resolveCopyForLang(s, lang);
 
     const [serveUrl, shotBuf, aiLockup, walkFrames] = await Promise.all([
       getBundle(),
@@ -125,7 +126,7 @@ export async function GET(
     const walkthroughFrames = walkFrames.map((buf) => bufferToDataUrl(buf));
 
     const inputProps = {
-      headline: s.headline,
+      headline: copy.headline,
       projectName: s.name,
       segmentKey: seg.key,
       segmentLabel: seg.label,
@@ -141,9 +142,10 @@ export async function GET(
       theme: bg.theme,
       textColor: bg.text,
       textDimColor: bg.textDim,
-      features: s.features ?? [],
+      features: copy.features,
       mockup,
       walkthroughFrames,
+      isRtl: copy.lang === "ar",
     };
 
     const composition = await selectComposition({

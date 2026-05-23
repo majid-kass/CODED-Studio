@@ -14,13 +14,14 @@ type Lang = "en" | "ar";
 const COPY = {
   en: {
     dir: "ltr",
-    eyebrow: "CODED · Capstone Showcase",
     h1Line1: "Project",
     h1Line2: "Showcase",
     submit: "Submit your project",
+    yourName: "Your name",
+    yourEmail: "Your email",
     projectUrl: "Project URL",
     projectName: "Project name",
-    oneLine: "One line — what is it?",
+    oneLine: "Tell us about your project",
     program: "Which CODED program?",
     selectProgram: "Select your program…",
     consent: "You can use this project for CODED marketing (Instagram, web, etc.) with credit.",
@@ -33,18 +34,21 @@ const COPY = {
     adminSignIn: "Admin sign in",
     placeholderUrl: "https://your-project.com",
     placeholderName: "Loft5 Booking",
-    placeholderPitch: "An AI-powered event space booking platform",
+    placeholderYourName: "Layla Al-Sabah",
+    placeholderYourEmail: "you@example.com",
+    placeholderPitch: "An AI-powered event space booking platform that lets users discover, book, and pay for rooftop venues across Kuwait.",
     langToggle: "العربية",
   },
   ar: {
     dir: "rtl",
-    eyebrow: "كوديد · معرض المشاريع",
     h1Line1: "معرض",
     h1Line2: "المشاريع",
     submit: "أرسل مشروعك",
+    yourName: "اسمك",
+    yourEmail: "بريدك الإلكتروني",
     projectUrl: "رابط المشروع",
     projectName: "اسم المشروع",
-    oneLine: "وصف من سطر واحد — ما هو المشروع؟",
+    oneLine: "أخبرنا عن مشروعك",
     program: "أي برنامج من برامج كوديد؟",
     selectProgram: "اختر برنامجك…",
     consent: "يمكن استخدام هذا المشروع للتسويق على قنوات كوديد (إنستغرام، الويب، إلخ) مع ذكر الاسم.",
@@ -57,7 +61,9 @@ const COPY = {
     adminSignIn: "دخول المسؤول",
     placeholderUrl: "https://your-project.com",
     placeholderName: "حجوزات لوفت 5",
-    placeholderPitch: "منصة حجز مساحات فعاليات مدعومة بالذكاء الاصطناعي",
+    placeholderYourName: "ليلى السبت",
+    placeholderYourEmail: "you@example.com",
+    placeholderPitch: "منصة حجز مساحات فعاليات مدعومة بالذكاء الاصطناعي تتيح للمستخدمين اكتشاف وحجز ودفع تكاليف مساحات الأسطح في الكويت.",
     langToggle: "English",
   },
 } as const;
@@ -67,6 +73,8 @@ export default function SubmitPage() {
   const [url, setUrl] = useState("");
   const [name, setName] = useState("");
   const [pitch, setPitch] = useState("");
+  const [submitterName, setSubmitterName] = useState("");
+  const [submitterEmail, setSubmitterEmail] = useState("");
   const [segment, setSegment] = useState<SegmentKey | "">("");
   const [consent, setConsent] = useState(false);
   const [status, setStatus] = useState<"idle" | "submitting" | "done" | "error">("idle");
@@ -93,7 +101,15 @@ export default function SubmitPage() {
       const res = await fetch("/api/submit", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ url, name, pitch, segment, consent }),
+        body: JSON.stringify({
+          url,
+          name,
+          pitch,
+          segment,
+          consent,
+          submitterName,
+          submitterEmail,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error ?? "Failed");
@@ -142,11 +158,15 @@ export default function SubmitPage() {
       </header>
 
       <section className="relative z-20 flex-1 flex flex-col items-center px-6 pb-16">
-        <div className="w-full max-w-5xl mt-10 sm:mt-16 mb-12 sm:mb-16 text-center">
-          <p className="text-[10px] sm:text-xs uppercase tracking-[0.5em] text-white/50 mb-5">
-            {t.eyebrow}
-          </p>
-          <h1 className="font-extrabold uppercase leading-[0.92] tracking-[-0.02em] text-[clamp(64px,13vw,180px)]">
+        <div className="w-full max-w-5xl mt-12 sm:mt-20 mb-12 sm:mb-16 text-center">
+          <h1
+            className="inline-block border-white/85 leading-[0.92] tracking-[-0.02em] font-extrabold uppercase text-[clamp(56px,11vw,160px)]"
+            style={{
+              borderWidth: "clamp(6px,0.9vw,14px)",
+              borderStyle: "solid",
+              padding: "clamp(20px,3vw,42px) clamp(28px,5vw,72px)",
+            }}
+          >
             {t.h1Line1}
             <br />
             <span className="text-white/85">{t.h1Line2}</span>
@@ -165,6 +185,8 @@ export default function SubmitPage() {
                   setPitch("");
                   setSegment("");
                   setConsent(false);
+                  setSubmitterName("");
+                  setSubmitterEmail("");
                   setStatus("idle");
                 }}
                 className="text-sm uppercase tracking-[0.25em] text-white/70 hover:text-white transition"
@@ -180,6 +202,30 @@ export default function SubmitPage() {
               <p className="text-[10px] uppercase tracking-[0.3em] text-white/50 mb-2">
                 {t.submit}
               </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label={t.yourName} isRtl={isRtl}>
+                  <input
+                    type="text"
+                    required
+                    placeholder={t.placeholderYourName}
+                    value={submitterName}
+                    onChange={(e) => setSubmitterName(e.target.value)}
+                    className="w-full rounded-lg bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-white/40 transition"
+                  />
+                </Field>
+                <Field label={t.yourEmail} isRtl={isRtl}>
+                  <input
+                    type="email"
+                    required
+                    placeholder={t.placeholderYourEmail}
+                    value={submitterEmail}
+                    onChange={(e) => setSubmitterEmail(e.target.value)}
+                    dir="ltr"
+                    className="w-full rounded-lg bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-white/40 transition"
+                  />
+                </Field>
+              </div>
 
               <Field label={t.projectUrl} isRtl={isRtl}>
                 <input

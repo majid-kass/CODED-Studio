@@ -11,7 +11,7 @@ import { SegmentLogo } from "../components/SegmentLogo";
 import type { SegmentKey } from "../lib/brandTheme";
 
 export const REEL_FPS = 30;
-export const REEL_DURATION_FRAMES = 900; // 30s
+export const REEL_DURATION_FRAMES = 600; // 20s
 
 export const marketingReelSchema = z.object({
   headline: z.string(),
@@ -40,6 +40,9 @@ export const marketingReelSchema = z.object({
       (landing page → up to 4 internal pages). When non-empty the Reel cuts
       between these on each tap instead of scrolling one long screenshot. */
   walkthroughFrames: z.array(z.string()),
+  /** Whether the headline/CTA copy is right-to-left (Arabic) so we can flip
+      element direction and tweak text alignment. */
+  isRtl: z.boolean(),
 });
 
 const CANVAS_W = 1080;
@@ -52,19 +55,20 @@ const APERTURE_H = PHONE_H - APERTURE_INSET * 2;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Scene timing — drives every transform. Adjust here, not inside components.
-// 0–3s    SCENE 1   brand intro
-// 3–9s    SCENE 2   phone reveal portrait + tap demo
-// 9–15s   SCENE 3   phone tilts sideways + stat badges fly in
-// 15–21s  SCENE 4   phone back upright + more taps + segment infographic
-// 21–26s  SCENE 5   infographic moment (phone shrinks, stats dominate)
-// 26–30s  SCENE 6   CTA outro
+// Each scene roughly 1/6 of the 20-second total (600 frames @ 30 fps):
+// 0–2s    SCENE 1   brand intro
+// 2–6s    SCENE 2   phone reveal portrait + tap demo
+// 6–10s   SCENE 3   phone tilts sideways + stat badges fly in
+// 10–14s  SCENE 4   phone back upright + more taps + segment infographic
+// 14–17s  SCENE 5   infographic moment (phone shrinks, stats dominate)
+// 17–20s  SCENE 6   CTA outro
 const SCENES = {
-  intro: [0, 90],
-  reveal: [90, 270],
-  sideways: [270, 450],
-  upright: [450, 630],
-  infographic: [630, 780],
-  cta: [780, 900],
+  intro: [0, 60],
+  reveal: [60, 180],
+  sideways: [180, 300],
+  upright: [300, 420],
+  infographic: [420, 510],
+  cta: [510, 600],
 } as const;
 
 // Helper: stable progress from [a..b], clamped 0..1.
@@ -542,6 +546,7 @@ export const MarketingReel: React.FC<
   features,
   mockup,
   walkthroughFrames,
+  isRtl,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -605,9 +610,12 @@ export const MarketingReel: React.FC<
   const shrink = isLaptop ? 1 : interpolate(t5Net, [0, 1], [1, 0.62]);
   const shrinkShiftX = isLaptop ? 0 : interpolate(t5Net, [0, 1], [0, 220]);
 
+  // CTA scene: pull the device up and shrink it so the CTA pill has clear
+  // air below — previously the "Try {project} →" pill overlapped the phone
+  // bottom bezel.
   const t6 = ramp(frame, SCENES.cta[0] - 20, SCENES.cta[0] + 30);
-  const ctaScale = interpolate(t6, [0, 1], [1, 0.9]);
-  const ctaShiftY = interpolate(t6, [0, 1], [0, 40]);
+  const ctaScale = interpolate(t6, [0, 1], [1, 0.7]);
+  const ctaShiftY = interpolate(t6, [0, 1], [0, -130]);
 
   const finalScale = shrink * ctaScale;
   const finalShiftX = sidewaysShiftX + shrinkShiftX;
@@ -736,27 +744,32 @@ export const MarketingReel: React.FC<
             marginTop: 30,
             fontSize: 28,
             color: segAccent,
-            letterSpacing: 8,
+            letterSpacing: isRtl ? 0 : 8,
             textTransform: "uppercase",
             fontWeight: 600,
+            lineHeight: 1.4,
             opacity: eyebrowOpacity,
             transform: `translateY(${eyebrowY}px)`,
             display: "flex",
+            direction: isRtl ? "rtl" : "ltr",
           }}
         >
-          {`Built with AI · ${segmentLabel}`}
+          {isRtl
+            ? `صُنع بالذكاء الاصطناعي · ${segmentLabel}`
+            : `Built with AI · ${segmentLabel}`}
         </div>
         <div
           style={{
             marginTop: 14,
             fontSize: 72,
             fontWeight: 800,
-            lineHeight: 1.05,
+            lineHeight: 1.15,
             letterSpacing: -1,
             display: "flex",
             flexWrap: "wrap",
             gap: "0 18px",
             opacity: headlineGate,
+            direction: isRtl ? "rtl" : "ltr",
           }}
         >
           {words.map((w, i) => {
@@ -904,46 +917,57 @@ export const MarketingReel: React.FC<
         })}
       </div>
 
-      {/* ── Scene 6 — CTA pill + URL ────────────────────────────────────── */}
+      {/* ── Scene 6 — CTA pill + URL ──────────────────────────────────────
+          Pushed further down (top 1640) since the device pulls UP during the
+          CTA scene, leaving the lower band clear. Padding bumped vertically
+          so descenders ("y", "g", lowered Arabic glyphs) aren't clipped on
+          either theme. Pill colors flip per theme so light-mode reads as
+          accent-on-white instead of white-on-white. */}
       <div
         style={{
           position: "absolute",
-          top: 1500,
+          top: 1640,
           left: 0,
           right: 0,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           opacity: ctaOpacity,
+          direction: isRtl ? "rtl" : "ltr",
         }}
       >
         <div
           style={{
             fontSize: 26,
             color: segAccent,
-            letterSpacing: 8,
+            letterSpacing: isRtl ? 0 : 8,
             textTransform: "uppercase",
             fontWeight: 700,
-            marginBottom: 18,
+            marginBottom: 22,
+            lineHeight: 1.4,
             display: "flex",
           }}
         >
-          {`Try it now · ${segmentLabel}`}
+          {isRtl
+            ? `جرّب الآن · ${segmentLabel}`
+            : `Try it now · ${segmentLabel}`}
         </div>
         <div
           style={{
-            padding: "20px 44px",
-            backgroundColor: "rgba(255,255,255,0.96)",
-            color: "#14243F",
+            padding: "26px 52px",
+            backgroundColor: textColor === "#FFFFFF" ? "#FFFFFF" : segAccent,
+            color: textColor === "#FFFFFF" ? "#14243F" : "#FFFFFF",
             borderRadius: 100,
-            fontSize: 44,
+            fontSize: 42,
             fontWeight: 800,
-            letterSpacing: -0.5,
-            boxShadow: `0 20px 50px rgba(0,0,0,0.45), 0 0 40px ${segAccent}50`,
+            letterSpacing: isRtl ? 0 : -0.5,
+            lineHeight: 1.25,
+            boxShadow: `0 20px 50px rgba(0,0,0,0.35), 0 0 40px ${segAccent}50`,
             display: "flex",
+            alignItems: "center",
           }}
         >
-          {`Try ${projectName} →`}
+          {isRtl ? `${projectName} ←` : `Try ${projectName} →`}
         </div>
       </div>
 

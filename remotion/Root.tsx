@@ -37,6 +37,7 @@ export const Root = () => {
           features: ["Live availability", "Instant booking", "AI scheduling", "Bilingual UI"],
           mockup: "phone" as const,
           walkthroughFrames: [] as string[],
+          isRtl: false,
         }}
       />
     </>

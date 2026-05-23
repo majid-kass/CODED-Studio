@@ -18,6 +18,17 @@ export type Submission = {
   segment?: SegmentKey;
   shotWidth?: number;
   shotHeight?: number;
+  /** Submitter contact — captured so we can attribute / follow up. Not
+      rendered into the public Instagram outputs. */
+  submitterName?: string;
+  submitterEmail?: string;
+  /** Lazily-generated Arabic translation of headline/caption/features.
+      Filled when admin requests an Arabic render of an English submission. */
+  arabic?: {
+    headline: string;
+    caption: string;
+    features: string[];
+  };
 };
 
 // Public anon client. Used by addSubmission (the submit form is open to
@@ -56,5 +67,25 @@ export async function addSubmission(s: Submission) {
     .insert({ id: s.id, data: s });
   if (error) {
     throw new Error(`addSubmission failed: ${error.message}`);
+  }
+}
+
+/** Patch a submission's data column — used when we want to cache derived
+ * content (e.g. an Arabic translation) without bouncing through the form. */
+export async function patchSubmission(id: string, patch: Partial<Submission>) {
+  const client = await supabaseServer();
+  const { data: existing } = await client
+    .from("submissions")
+    .select("data")
+    .eq("id", id)
+    .single();
+  if (!existing) return;
+  const merged = { ...(existing.data as Submission), ...patch };
+  const { error } = await client
+    .from("submissions")
+    .update({ data: merged })
+    .eq("id", id);
+  if (error) {
+    throw new Error(`patchSubmission failed: ${error.message}`);
   }
 }

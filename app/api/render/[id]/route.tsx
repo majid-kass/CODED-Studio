@@ -10,7 +10,7 @@ import {
   type Viewport,
 } from "@/lib/screenshot";
 import { brandBg, getSegment } from "@/lib/brandTheme";
-import { parseRenderOptions, applyThemeOverride } from "@/lib/renderOptions";
+import { parseRenderOptions, applyThemeOverride, resolveCopyForLang } from "@/lib/renderOptions";
 import { SegmentLogo } from "@/components/SegmentLogo";
 
 export const runtime = "nodejs";
@@ -52,12 +52,13 @@ export async function GET(
   const s = all.find((x) => x.id === id);
   if (!s) return new Response("Not found", { status: 404 });
 
-  const { themeOverride, mockup } = parseRenderOptions(req);
+  const { themeOverride, mockup, lang } = parseRenderOptions(req);
   const viewport: Viewport = mockup === "laptop" ? "desktop" : "mobile";
   const cropAspect = mockup === "laptop" ? LAPTOP_ASPECT : PHONE_ASPECT;
 
   const seg = getSegment(s.segment);
   const bg = applyThemeOverride(brandBg(seg), themeOverride);
+  const copy = await resolveCopyForLang(s, lang);
 
   const aiLockup =
     seg.key === "ai-app-developer"
@@ -177,7 +178,7 @@ export async function GET(
             maxWidth: 900,
           }}
         >
-          {s.headline}
+          {copy.headline}
         </div>
 
         <div
