@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PhoneMockup } from "./PhoneMockup";
 import type { SegmentKey } from "@/lib/brandTheme";
 
@@ -49,6 +49,50 @@ export function SubmissionCard({ submission, screenshotSrc, hasScreenshot }: Pro
   const [theme, setTheme] = useState<ThemeChoice>("auto");
   const [mockup, setMockup] = useState<MockupChoice>("phone");
   const [langChoice, setLangChoice] = useState<LangChoice>("auto");
+  // Preview of the caption / headline in the currently-selected language.
+  // Starts as the submission's stored copy; fetched fresh when the admin
+  // flips the Language picker to something other than the native language.
+  const [preview, setPreview] = useState<{
+    headline: string;
+    caption: string;
+    lang: "en" | "ar";
+  }>({
+    headline: submission.headline,
+    caption: submission.caption,
+    lang: submission.language ?? "en",
+  });
+  const [previewBusy, setPreviewBusy] = useState(false);
+
+  useEffect(() => {
+    const native = submission.language ?? "en";
+    const wanted = langChoice === "auto" ? native : langChoice;
+    if (wanted === preview.lang) return;
+    let cancelled = false;
+    setPreviewBusy(true);
+    fetch(`/api/translate/${submission.id}?lang=${wanted}`)
+      .then(async (r) => {
+        if (!r.ok) throw new Error(await r.text().catch(() => "translate failed"));
+        return r.json();
+      })
+      .then((data) => {
+        if (cancelled) return;
+        setPreview({
+          headline: data.headline,
+          caption: data.caption,
+          lang: data.lang,
+        });
+      })
+      .catch(() => {
+        // Silent — admin can still click Generate and the render route
+        // will translate again on the server.
+      })
+      .finally(() => {
+        if (!cancelled) setPreviewBusy(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [langChoice, submission.id, submission.language, preview.lang]);
   const [screenshotReady, setScreenshotReady] = useState(hasScreenshot);
   const [warming, setWarming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -195,7 +239,7 @@ export function SubmissionCard({ submission, screenshotSrc, hasScreenshot }: Pro
           {screenshotReady ? (
             <PhoneMockup
               screenshotUrl={screenshotSrc}
-              headline={submission.headline}
+              headline={preview.headline}
               projectName={submission.name}
               segment={submission.segment}
             />
@@ -210,9 +254,19 @@ export function SubmissionCard({ submission, screenshotSrc, hasScreenshot }: Pro
           <p className="text-[10px] uppercase tracking-[0.25em] text-white/50 mb-2">
             Caption
           </p>
-          <p className="whitespace-pre-wrap text-sm text-white/85 leading-relaxed">
-            {submission.caption}
+          <p
+            dir={preview.lang === "ar" ? "rtl" : "ltr"}
+            className={`whitespace-pre-wrap text-sm text-white/85 leading-relaxed transition-opacity ${
+              previewBusy ? "opacity-40" : "opacity-100"
+            }`}
+          >
+            {preview.caption}
           </p>
+          {previewBusy && (
+            <p className="text-[10px] uppercase tracking-[0.25em] text-white/40 mt-2">
+              Translating…
+            </p>
+          )}
         </div>
 
         <div className="space-y-3 pt-2">

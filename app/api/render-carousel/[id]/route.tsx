@@ -23,6 +23,7 @@ import {
   resolveCopyForLang,
   type MockupChoice,
 } from "@/lib/renderOptions";
+import { arabicFonts } from "@/lib/fonts";
 import { SegmentLogo } from "@/components/SegmentLogo";
 
 export const runtime = "nodejs";
@@ -87,6 +88,7 @@ type Ctx = {
   segmentKey: SegmentKey;
   aiLockup?: string;
   mockup: MockupChoice;
+  isRtl: boolean;
 };
 
 // ─── Frame layer used by every slide ─────────────────────────────────────────
@@ -99,7 +101,7 @@ function SlideFrame({
   slideNum: number;
   children: React.ReactNode;
 }) {
-  const { bg, seg, segmentKey, aiLockup } = ctx;
+  const { bg, seg, segmentKey, aiLockup, isRtl } = ctx;
   return (
     <div
       style={{
@@ -113,9 +115,10 @@ function SlideFrame({
           ? `${bg.cssOverlay}, ${bg.cssGradient}`
           : bg.cssGradient,
         color: bg.text,
-        fontFamily: "sans-serif",
+        fontFamily: isRtl ? "Noto Sans Arabic, sans-serif" : "sans-serif",
         padding: PAD,
         overflow: "hidden",
+        direction: isRtl ? "rtl" : "ltr",
       }}
     >
       <CornerBracket x="left" y="top" color={bg.rule} opacity={0.18} />
@@ -795,13 +798,16 @@ export async function GET(
 
     const pitchLine = s.pitch.length > 140 ? s.pitch.slice(0, 137) + "…" : s.pitch;
 
+    const isRtl = copy.lang === "ar";
     const ctx: Ctx = {
       bg,
       seg,
       segmentKey: seg.key,
       aiLockup,
       mockup,
+      isRtl,
     };
+    const fonts = isRtl ? await arabicFonts() : undefined;
 
     const features = copy.features;
     const slidesA = features.slice(0, 3);
@@ -833,7 +839,7 @@ export async function GET(
 
     const slideBuffers = await Promise.all(
       slides.map(async (el) => {
-        const res = new ImageResponse(el, { width: W, height: H });
+        const res = new ImageResponse(el, { width: W, height: H, fonts });
         return Buffer.from(await res.arrayBuffer());
       }),
     );

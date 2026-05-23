@@ -41,7 +41,8 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/api/render-video") ||
     pathname.startsWith("/api/render-carousel") ||
     pathname.startsWith("/api/walkthrough") ||
-    pathname.startsWith("/api/screenshot");
+    pathname.startsWith("/api/screenshot") ||
+    pathname.startsWith("/api/translate");
 
   if (isProtected && !user) {
     const url = request.nextUrl.clone();

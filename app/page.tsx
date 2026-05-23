@@ -158,19 +158,22 @@ export default function SubmitPage() {
       </header>
 
       <section className="relative z-20 flex-1 flex flex-col items-center px-6 pb-16">
-        <div className="w-full max-w-5xl mt-12 sm:mt-20 mb-12 sm:mb-16 text-center">
-          <h1
-            className="inline-block border-white/85 leading-[0.92] tracking-[-0.02em] font-extrabold uppercase text-[clamp(56px,11vw,160px)]"
-            style={{
-              borderWidth: "clamp(6px,0.9vw,14px)",
-              borderStyle: "solid",
-              padding: "clamp(20px,3vw,42px) clamp(28px,5vw,72px)",
-            }}
-          >
-            {t.h1Line1}
-            <br />
-            <span className="text-white/85">{t.h1Line2}</span>
-          </h1>
+        <div className="w-full max-w-5xl mt-12 sm:mt-20 mb-12 sm:mb-16">
+          <div className="flex items-center justify-center gap-3 sm:gap-8">
+            <Brace
+              char="{"
+              className="text-[clamp(120px,18vw,260px)] leading-none"
+            />
+            <h1 className="text-center font-extrabold uppercase leading-[0.92] tracking-[-0.02em] text-[clamp(56px,11vw,150px)]">
+              {t.h1Line1}
+              <br />
+              <span className="text-white/85">{t.h1Line2}</span>
+            </h1>
+            <Brace
+              char="}"
+              className="text-[clamp(120px,18vw,260px)] leading-none"
+            />
+          </div>
         </div>
 
         <div className="w-full max-w-xl">
@@ -308,6 +311,32 @@ export default function SubmitPage() {
         <span>@coded.kw</span>
       </footer>
     </main>
+  );
+}
+
+// Decorative brace flanking the PROJECT SHOWCASE wordmark. Renders the
+// glyph in CODED Brand Blue with a layered text-shadow that suggests the
+// chrome/glass treatment from the brand book without needing a 3D asset.
+function Brace({ char, className }: { char: "{" | "}"; className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={`font-extrabold select-none ${className ?? ""}`}
+      style={{
+        background:
+          "linear-gradient(180deg, #5fa2ff 0%, #2566c8 35%, #004AA3 60%, #062b6a 100%)",
+        WebkitBackgroundClip: "text",
+        backgroundClip: "text",
+        color: "transparent",
+        textShadow:
+          "0 0 60px rgba(0,74,163,0.55), 0 0 20px rgba(98,255,229,0.20)",
+        // Slight depth via a subtle horizontal scale + the gradient — gives
+        // each brace a little weight without a 3D asset.
+        transform: char === "{" ? "translateY(-4%) scaleX(1.05)" : "translateY(-4%) scaleX(1.05)",
+      }}
+    >
+      {char}
+    </span>
   );
 }
 

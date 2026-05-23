@@ -11,6 +11,7 @@ import {
 } from "@/lib/screenshot";
 import { brandBg, getSegment } from "@/lib/brandTheme";
 import { parseRenderOptions, applyThemeOverride, resolveCopyForLang } from "@/lib/renderOptions";
+import { arabicFonts } from "@/lib/fonts";
 import { SegmentLogo } from "@/components/SegmentLogo";
 
 export const runtime = "nodejs";
@@ -97,6 +98,9 @@ export async function GET(
   const LAPTOP_HINGE_H = 22;
   const LAPTOP_BASE_W = Math.round(LAPTOP_W * 1.07);
 
+  const isArabic = copy.lang === "ar";
+  const fonts = isArabic ? await arabicFonts() : undefined;
+
   return new ImageResponse(
     (
       <div
@@ -110,10 +114,11 @@ export async function GET(
             ? `${bg.cssOverlay}, ${bg.cssGradient}`
             : bg.cssGradient,
           color: bg.text,
-          fontFamily: "sans-serif",
+          fontFamily: isArabic ? "Noto Sans Arabic, sans-serif" : "sans-serif",
           padding: "80px 80px",
           position: "relative",
           overflow: "hidden",
+          direction: isArabic ? "rtl" : "ltr",
         }}
       >
         <CornerBracket x="left" y="top" color={bg.rule} opacity={0.18} />
@@ -352,6 +357,7 @@ export async function GET(
     {
       width: 1080,
       height: 1920,
+      fonts,
       headers: {
         "Content-Disposition": `attachment; filename="${safeName || "post"}-coded.png"`,
         "Cache-Control": "no-store",

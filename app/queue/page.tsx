@@ -28,11 +28,8 @@ export default async function QueuePage() {
   return (
     <main className="min-h-screen">
       <header className="px-6 sm:px-8 py-5 flex items-center justify-between gap-4 border-b border-white/5">
-        <Link href="/" className="flex items-center gap-3 min-w-0">
+        <Link href="/" className="min-w-0">
           <CodedLogo width={90} />
-          <span className="hidden sm:inline text-[10px] uppercase tracking-[0.25em] text-white/40 whitespace-nowrap">
-            Marketing queue
-          </span>
         </Link>
         <div className="flex items-center gap-4">
           {user?.email && (
@@ -42,13 +39,28 @@ export default async function QueuePage() {
           )}
           <Link
             href="/"
-            className="text-[10px] uppercase tracking-[0.25em] text-white/60 hover:text-aiapp-aqua transition whitespace-nowrap"
+            className="text-[10px] uppercase tracking-[0.25em] text-white/60 hover:text-white transition whitespace-nowrap"
           >
             ← Submit form
           </Link>
           <SignOutButton />
         </div>
       </header>
+
+      <section className="px-6 sm:px-8 pt-16 pb-8 text-center">
+        <p className="text-[10px] sm:text-xs uppercase tracking-[0.5em] text-white/40 mb-4">
+          Admin · CODED
+        </p>
+        <h1 className="font-extrabold uppercase leading-[0.95] tracking-[-0.02em] text-[clamp(48px,9vw,112px)]">
+          Marketing Queue
+        </h1>
+        {submissions.length > 0 && (
+          <p className="mt-5 text-sm text-white/55">
+            {submissions.length}{" "}
+            {submissions.length === 1 ? "submission" : "submissions"} awaiting review
+          </p>
+        )}
+      </section>
 
       <section className="px-6 sm:px-8 py-12">
         {submissions.length === 0 ? (
